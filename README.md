@@ -1,0 +1,1 @@
+# ALTAVA-staking-contract
