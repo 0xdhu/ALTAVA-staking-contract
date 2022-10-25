@@ -1,19 +1,35 @@
 async function main() {
-    const [deployer] = await ethers.getSigners();
+  const [deployer] = await ethers.getSigners();
   
-    console.log("Deploying contracts with the account:", deployer.address);
-  
-    console.log("Account balance:", (await deployer.getBalance()).toString());
-  
-    const Token = await ethers.getContractFactory("Token");
-    const token = await Token.deploy();
-  
-    console.log("Token address:", token.address);
+  // Deploy TAVA Token contract
+  const TAVA = await ethers.getContractFactory("TAVA");
+  const TAVAContract = await TAVA.deploy();
+  await TAVAContract.deployed();
+
+  // Deploy SecondskinNFT contract
+  const SecondSkinNFT = await ethers.getContractFactory("SecondSkinNFT");
+  const SecondSkinNFTContract = await SecondSkinNFT.deploy(
+    owner.address
+  );
+  await SecondSkinNFTContract.deployed();
+
+  // Deploy ThirdParty NFT Generator contract
+  const NFTFactory = await ethers.getContractFactory("NFTFactory");
+  const NFTFactoryContract = await NFTFactory.deploy();
+  await NFTFactoryContract.deployed();
+
+  // Deploy NFTMasterChef contract
+  const NFTMasterChef = await ethers.getContractFactory("NFTMasterChef");
+  const NFTMasterChefContract = await NFTMasterChef.deploy(
+    TAVAContract.address,
+    SecondSkinNFTContract.address
+  );
+  await NFTMasterChefContract.deployed();
 }
 
 main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

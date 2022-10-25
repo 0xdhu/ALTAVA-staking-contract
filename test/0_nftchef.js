@@ -28,7 +28,9 @@ describe("Third-Party NFT Chef", function () {
         // Deploy ThirdParty NFT contract
         const ThirdPartyNFT = await ethers.getContractFactory("ThirdPartyNFT");
         const ThirdPartyNFTContract = await ThirdPartyNFT.deploy(
-            owner.address
+            owner.address,
+            "Test NFT Token",
+            "TNT"
         );
         await ThirdPartyNFTContract.deployed();
 

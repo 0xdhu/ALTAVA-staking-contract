@@ -27,8 +27,10 @@ contract ThirdPartyNFT is ERC721URIStorage {
 
     // create an instance of ERC721 and ownership
     constructor(
-        address newOwner
-    ) ERC721("ALTAVA ThirdPartyNFT", "ThirdPartyNFT") {
+        address newOwner,
+        string memory _name,
+        string memory _symbol
+    ) ERC721(_name, _symbol) {
         _owner = newOwner;
     }
 

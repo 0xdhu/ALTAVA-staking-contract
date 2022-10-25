@@ -12,7 +12,10 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract ThirdPartyToken is ERC20{
     // The fixed amount of tokens, stored in an unsigned integer type variable.
     uint256 public initialSupply = 1000000 * 1e18;
-    constructor() ERC20("ThirdParty TOKEN", "TPT") {
+    constructor(
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) {
         _mint(msg.sender, initialSupply);
     }
 }
