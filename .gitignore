@@ -3,3 +3,5 @@
 .private
 .cache
 .DS_Store
+/artifacts
+/cache

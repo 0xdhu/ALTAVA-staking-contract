@@ -11,27 +11,94 @@ import "./NFTChef.sol";
 contract NFTMasterChef is Ownable{
     using SafeMath for uint256;    
 
-    // Staked Event
+    // Second Skin NFT
+    address public secondskinNFT;
+    // ALTAVA TOKEN (TAVA)
+    address public stakedToken;
+
+    // deployed chef total count
+    uint256 public total_count;
+    // id => deployed chef address
+    mapping(uint256 => address) private chefAddress;
+
+    // Deployed new chef Event
     event NewNFTChefContract(
-        address indexed nftChef,
-        address indexed rewardNFT,
-        address indexed stakedToken,
-        address admin
+        string id,
+        address indexed chef,
+        address indexed reward_nft
+    );
+
+    // Staked Event
+    event Staked(
+        address indexed chef,
+        address indexed sender, 
+        uint256 stake_index,
+        uint256 staked_amount, 
+        uint256 locked_at, 
+        uint256 lock_duration, 
+        uint256 unlock_at,
+        uint256 nft_balance,
+        uint256 booster_percent
+    );
+
+    // Unstake Event
+    event Unstake(
+        address indexed chef,
+        address indexed sender, 
+        uint256 stake_index,
+        uint256 withdraw_amount, 
+        uint256 withdraw_at,
+        uint256 nft_balance,
+        uint256 booster_percent
+    );
+
+    // Event whenever updates the "Required Lock Amount"
+    event AddedRequiredLockAmount(
+        address indexed chef,
+        address indexed sender, 
+        uint256 period, 
+        uint required_amount, 
+        uint rewardnft_amount,
+        bool is_live
     );
     
-    constructor () { }
+    modifier onlySubChef {
+        bool isSubChef = false;
+        for(uint256 i=0; i < total_count; i++) {
+            if (chefAddress[i] == msg.sender) {
+                isSubChef = true;
+            }
+        }
+        require(isSubChef, "Role: not sub chef");
+        _;
+    }
+
+    constructor (
+        address _stakedToken,
+        address _secondskinNFT
+    ) { 
+        require(_secondskinNFT != address(0x0), "Secondskin NFT should not be zero address");
+        require(IERC20(_stakedToken).totalSupply() >= 0);
+        secondskinNFT = _secondskinNFT;
+        stakedToken = _stakedToken;
+    }
 
     /**
      * @dev deploy the new NFTChef
      */
     function deploy(
-        IERC20 _stakedToken,
+        string memory _id,
         address _rewardNFT,
-        address _admin
+        uint256[] calldata _booster
     ) external onlyOwner {
-        require(_stakedToken.totalSupply() >= 0);
-        require(_rewardNFT != address(0x0));
-        require(_admin != address(0x0));
+        require(_rewardNFT != address(0x0));        
+        for(uint256 i=0; i < _booster.length; i++) {
+            require(_booster[i] > 0, "Booster value should not be zero");
+            require(_booster[i] < 5000, "Booster value should not over 50%");
+            if(i > 0) {
+                require(_booster[i] >= _booster[i-1], "Booster value should not be increased");
+            }
+        }
 
         bytes memory bytecode = type(NFTChef).creationCode;
         // pass constructor argument
@@ -39,7 +106,8 @@ contract NFTMasterChef is Ownable{
             bytecode,
             abi.encode()
         );
-        bytes32 salt = keccak256(abi.encodePacked());
+        // This pair address should be unique
+        bytes32 salt = keccak256(abi.encodePacked(stakedToken, _rewardNFT, secondskinNFT));
         address nftChefAddress;
 
         assembly {
@@ -47,13 +115,94 @@ contract NFTMasterChef is Ownable{
         }
         
         NFTChef(nftChefAddress).initialize(
-            address(_stakedToken),
+            stakedToken,
             _rewardNFT,
-            _admin,
-            msg.sender
+            msg.sender,
+            secondskinNFT,
+            _booster
         );
 
+        // register address
+        chefAddress[total_count] = nftChefAddress;
+        total_count = total_count.add(1);
+
         // emit event
-        emit NewNFTChefContract(nftChefAddress, _rewardNFT, address(_stakedToken), _admin);
+        emit NewNFTChefContract(_id, nftChefAddress, _rewardNFT);
+    }
+
+    /**
+     * get chef address with id
+     */
+    function getChefAddress(uint256 id) external view returns(address) {
+        require(total_count > id, "Chef: not exist");
+        return chefAddress[id];
+    }
+
+    /**
+     * Emit event from sub chef: Staked
+     */
+    function emitStakedEventFromSubChef(
+        address sender, 
+        uint256 stake_index,
+        uint256 staked_amount, 
+        uint256 locked_at, 
+        uint256 lock_duration, 
+        uint256 unlock_at,
+        uint256 nft_balance,
+        uint256 booster_percent
+    ) external onlySubChef {
+        emit Staked(
+            msg.sender,
+            sender, 
+            stake_index,
+            staked_amount, 
+            locked_at, 
+            lock_duration, 
+            unlock_at,
+            nft_balance,
+            booster_percent
+        );
+    }
+
+    /**
+     * Emit event from sub chef: Unstaked
+     */
+    function emitUnstakedEventFromSubChef(
+        address sender, 
+        uint256 stake_index,
+        uint256 withdraw_amount, 
+        uint256 withdraw_at,
+        uint256 nft_balance,
+        uint256 booster_percent
+    ) external onlySubChef {
+        emit Unstake(
+            msg.sender,
+            sender, 
+            stake_index,
+            withdraw_amount, 
+            withdraw_at,
+            nft_balance,
+            booster_percent
+        );
+    }
+
+    /**
+     * Emit event from sub chef: AddedRequiredLockAmount
+     */
+    function emitAddedRequiredLockAmountEventFromSubChef(
+        address sender, 
+        uint256 period, 
+        uint required_amount, 
+        uint rewardnft_amount,
+        bool is_live
+    ) external onlySubChef {
+        emit AddedRequiredLockAmount(
+            msg.sender,
+            sender, 
+            period, 
+            required_amount, 
+            rewardnft_amount,
+            is_live
+        );
     }
 }

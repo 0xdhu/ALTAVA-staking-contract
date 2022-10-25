@@ -1,5 +1,5 @@
 /**
- * This TAVA is just test purpose contract in only testnet
+ * This ThirdPartyNFT is just test purpose contract
  */
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.0 <0.9.0;
@@ -8,12 +8,12 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 // only owner
-error SecondSkinNFT__InvalidOwner();
+error ThirdPartyNFT__InvalidOwner();
 
 /**
- * @title ALTAVA's own NFT contract. This is just test purpoase NFT token contract in testnet.
+ * @title ALTAVA's own NFT contract. This is just test NFT token contract in testnet.
  */
-contract SecondSkinNFT is ERC721URIStorage {
+contract ThirdPartyNFT is ERC721URIStorage {
     // helper function
     using Strings for uint256;
 
@@ -27,14 +27,16 @@ contract SecondSkinNFT is ERC721URIStorage {
 
     // create an instance of ERC721 and ownership
     constructor(
-        address newOwner
-    ) ERC721("ALTAVA SecondSkinNFT", "SecondSkinNFT") {
+        address newOwner,
+        string memory _name,
+        string memory _symbol
+    ) ERC721(_name, _symbol) {
         _owner = newOwner;
     }
 
     // make sure only owner can do it
     modifier onlyOwner() {
-        if (msg.sender != _owner) revert SecondSkinNFT__InvalidOwner();
+        if (msg.sender != _owner) revert ThirdPartyNFT__InvalidOwner();
         _;
     }
 
