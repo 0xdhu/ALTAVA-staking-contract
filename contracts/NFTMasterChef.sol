@@ -12,7 +12,7 @@ contract NFTMasterChef is Ownable{
     using SafeMath for uint256;    
 
     // Second Skin NFT
-    address public secondskinNFT;
+    address public nftstaking;
     // ALTAVA TOKEN (TAVA)
     address public stakedToken;
 
@@ -75,16 +75,26 @@ contract NFTMasterChef is Ownable{
 
     constructor (
         address _stakedToken,
-        address _secondskinNFT
+        address _nftstaking
     ) { 
-        require(_secondskinNFT != address(0x0), "Secondskin NFT should not be zero address");
+        require(_nftstaking != address(0x0), "Address should not be zero address");
         require(IERC20(_stakedToken).totalSupply() >= 0);
-        secondskinNFT = _secondskinNFT;
+        nftstaking = _nftstaking;
         stakedToken = _stakedToken;
     }
 
     /**
+     * set nftstaking contract address
+     */
+    function setNFTStaking(address _nftstaking) external onlyOwner {
+        require(_nftstaking != address(0x0), "Address should not be zero address");
+        nftstaking = _nftstaking;
+    }
+
+    /**
      * @dev deploy the new NFTChef
+     * 
+     * @param _id `NFTChefs` table unique objectId
      */
     function deploy(
         string memory _id,
@@ -107,7 +117,7 @@ contract NFTMasterChef is Ownable{
             abi.encode()
         );
         // This pair address should be unique
-        bytes32 salt = keccak256(abi.encodePacked(stakedToken, _rewardNFT, secondskinNFT));
+        bytes32 salt = keccak256(abi.encodePacked(stakedToken, _rewardNFT, nftstaking));
         address nftChefAddress;
 
         assembly {
@@ -118,7 +128,7 @@ contract NFTMasterChef is Ownable{
             stakedToken,
             _rewardNFT,
             msg.sender,
-            secondskinNFT,
+            nftstaking,
             _booster
         );
 

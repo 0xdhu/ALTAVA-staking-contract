@@ -16,6 +16,14 @@ async function main() {
   await SecondSkinNFTContract.deployed();
   console.log("SecondSkinNFT: ", SecondSkinNFTContract.address);
 
+  // Deploy NFT Staking Contract
+  const NFTStaking = await ethers.getContractFactory("NFTStaking");
+  const NFTStakingContract = await NFTStaking.deploy(
+    SecondSkinNFTContract.address
+  );
+  await NFTStakingContract.deployed();
+  console.log("NFTStaking: ", NFTStakingContract.address);
+
   // Deploy ThirdParty NFT Generator contract
   const NFTFactory = await ethers.getContractFactory("NFTFactory");
   const NFTFactoryContract = await NFTFactory.deploy();
@@ -26,7 +34,7 @@ async function main() {
   const NFTMasterChef = await ethers.getContractFactory("NFTMasterChef");
   const NFTMasterChefContract = await NFTMasterChef.deploy(
     TAVAContract.address,
-    SecondSkinNFTContract.address
+    NFTStakingContract.address
   );
   await NFTMasterChefContract.deployed();
   console.log("NFTMasterChef: ", NFTMasterChefContract.address);
