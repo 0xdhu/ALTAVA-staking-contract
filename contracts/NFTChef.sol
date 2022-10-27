@@ -7,10 +7,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/interfaces/IERC721.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 import "./interfaces/INFTMasterChef.sol";
+import "./interfaces/INFTStaking.sol";
+
 // development mode
 // import "hardhat/console.sol";
 
@@ -23,8 +24,8 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
     // The address of the smart chef factory
     address public immutable NFT_MASTER_CHEF_FACTORY;
 
-    // Second Skin NFT
-    IERC721 public secondSkinNFT;
+    // Second Skin NFT Staking Contract
+    INFTStaking public nftstaking;
 
     // TAVA ERC20 token
     IERC20 public stakedToken;
@@ -78,14 +79,14 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
      * @param _stakedToken: staked token address
      * @param _rewardNFT: reward token address (airdrop NFT)
      * @param _newOwner: need to set new owner because now factory is owner
-     * @param _secondskinNFT: NFT to be used as booster active
+     * @param _nftstaking: NFT to be used as booster active
      * @param _booster: booster values.
      */
     function initialize(
         address _stakedToken,
         address _rewardNFT,
         address _newOwner,
-        address _secondskinNFT,
+        address _nftstaking,
         uint256[] calldata _booster
     ) external {
         require(!isInitialized, "Already initialized");
@@ -96,7 +97,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
 
         stakedToken = IERC20(_stakedToken);
         rewardNFT = _rewardNFT;
-        secondSkinNFT = IERC721(_secondskinNFT);
+        nftstaking = INFTStaking(_nftstaking);
         
         // If didnot stake any amount of NFT, booster is just zero
         boosters[0] = 0;
@@ -127,7 +128,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
      * @dev get booster percent of user wallet.
      */
     function getStakerBoosterValue(address sender) public view returns(uint256) {
-        uint256 amount = secondSkinNFT.balanceOf(sender);
+        uint256 amount = nftstaking.getStakedNFTCount(sender);
         return getBoosterValue(amount);
     }
 
@@ -194,8 +195,9 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
     function stake(
         uint256 _lockPeriod
     ) external nonReentrant whenNotPaused {
+        address _sender = msg.sender;
         // Check `msg.sender`
-        require(msg.sender != address(0x0), "Invalid sender");
+        require(_sender != address(0x0), "Invalid sender");
 
         ChefConfig memory _chefConfig = chefConfig[_lockPeriod];
         require(_chefConfig.isLive == true, "This option is not in live");
@@ -204,9 +206,9 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
         require(requiredAmount > 0, "This option doesnot exist");
 
         // Get user staking index
-        uint256 idx = userStakeIndex[msg.sender];
+        uint256 idx = userStakeIndex[_sender];
         // Get object of user info
-        StakerInfo storage _userInfo = stakerInfos[msg.sender][idx];
+        StakerInfo storage _userInfo = stakerInfos[_sender][idx];
         require(_userInfo.unstaked == false, "This locked staking has been already unstaked");
 
         // This user have not staked yet or Extend days should be bigger than rock period
@@ -222,9 +224,10 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
             _userInfo.lockedAmount == 0, 
             "Expired. Please withdraw previous one and renew it"
         );
+        nftstaking.update_info(_sender);
 
         // Balance of secondskin NFT
-        uint256 nft_balance = secondSkinNFT.balanceOf(msg.sender);
+        uint256 nft_balance = nftstaking.getStakedNFTCount(_sender);
         // get booster percent
         uint256 booster_value = getBoosterValue(nft_balance);
         // decrease required amount
@@ -240,9 +243,9 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
             uint256 transferAmount = _requiredAmount.sub(currentBalance);
             // NOTE: approve token to extend allowance
             // Check token balance of sender
-            require(stakedToken.balanceOf(msg.sender) >= transferAmount, "Token: Insufficient balance");
+            require(stakedToken.balanceOf(_sender) >= transferAmount, "Token: Insufficient balance");
             // transfer from sender to address(this)
-            stakedToken.transferFrom(msg.sender, address(this), transferAmount);
+            stakedToken.transferFrom(_sender, address(this), transferAmount);
 
             // Update user Info
             _userInfo.lockedAmount = _requiredAmount;
@@ -263,7 +266,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
         _userInfo.unlockAt = _unlock_at;
         
         INFTMasterChef(NFT_MASTER_CHEF_FACTORY).emitStakedEventFromSubChef(
-            msg.sender, 
+            _sender, 
             idx,
             _userInfo.lockedAmount, 
             _userInfo.lockedAt,
@@ -278,12 +281,14 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
      * @dev unstake locked tokens after lock duration manually
      */
     function unstake() external nonReentrant {
+        address _sender = msg.sender;
+
         // Check `msg.sender`
-        require(msg.sender != address(0x0), "Invalid sender");
+        require(_sender != address(0x0), "Invalid sender");
         // Get user staking index
-        uint256 idx = userStakeIndex[msg.sender];
+        uint256 idx = userStakeIndex[_sender];
         // Get object of user info
-        StakerInfo storage _userInfo = stakerInfos[msg.sender][idx];
+        StakerInfo storage _userInfo = stakerInfos[_sender][idx];
 
         require(_userInfo.lockedAmount > 0, "Your position not exist");
         require(_userInfo.unlockAt < block.timestamp, "Not able to withdraw");
@@ -292,7 +297,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
         ChefConfig memory _chefConfig = chefConfig[_userInfo.lockDuration];
         uint256 requiredAmount = _chefConfig.requiredLockAmount;
         // Balance of NFT
-        uint256 nft_balance = secondSkinNFT.balanceOf(msg.sender);
+        uint256 nft_balance = nftstaking.getStakedNFTCount(_sender);
         // get booster percent
         uint256 booster_value = getBoosterValue(nft_balance);
         uint256 _decreaseAmount = requiredAmount.mul(booster_value).div(DENOMINATOR);
@@ -313,17 +318,17 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
             // If user has no NFT that staked before atm, need to pay panalty
             stakedToken.transfer(owner(), _panaltyAmount);
             // transfer from pool to user
-            stakedToken.transfer(msg.sender, withdrawAmount);
+            stakedToken.transfer(_sender, withdrawAmount);
         } else {
             // transfer from pool to user
-            stakedToken.transfer(msg.sender, unstakable_amount);
+            stakedToken.transfer(_sender, unstakable_amount);
         }
 
         // increase index
-        userStakeIndex[msg.sender] = idx + 1;
+        userStakeIndex[_sender] = idx + 1;
      
         INFTMasterChef(NFT_MASTER_CHEF_FACTORY).emitUnstakedEventFromSubChef(
-            msg.sender, 
+            _sender, 
             idx,
             unstakable_amount, 
             block.timestamp, 
@@ -343,7 +348,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable{
         ChefConfig memory _chefConfig = chefConfig[_userInfo.lockDuration];
         uint256 requiredAmount = _chefConfig.requiredLockAmount;
         // Balance of NFT
-        uint256 nft_balance = secondSkinNFT.balanceOf(sender);
+        uint256 nft_balance = nftstaking.getStakedNFTCount(sender);
         // get booster percent
         uint256 booster_value = getBoosterValue(nft_balance);
         uint256 _decreaseAmount = requiredAmount.mul(booster_value).div(DENOMINATOR);

@@ -25,6 +25,7 @@ describe("Third-Party NFT Chef", function () {
             owner.address
         );
         await SecondSkinNFTContract.deployed();
+
         // Deploy ThirdParty NFT contract
         const ThirdPartyNFT = await ethers.getContractFactory("ThirdPartyNFT");
         const ThirdPartyNFTContract = await ThirdPartyNFT.deploy(
@@ -34,11 +35,19 @@ describe("Third-Party NFT Chef", function () {
         );
         await ThirdPartyNFTContract.deployed();
 
+
+        // Deploy NFT Staking Contract
+        const NFTStaking = await ethers.getContractFactory("NFTStaking");
+        const NFTStakingContract = await NFTStaking.deploy(
+            SecondSkinNFTContract.address
+        );
+        await NFTStakingContract.deployed();
+
         // Deploy NFTMasterChef contract
         const NFTMasterChef = await ethers.getContractFactory("NFTMasterChef");
         const NFTMasterChefContract = await NFTMasterChef.deploy(
             TAVAContract.address,
-            SecondSkinNFTContract.address
+            NFTStakingContract.address
         );
         await NFTMasterChefContract.deployed();
 
@@ -54,7 +63,7 @@ describe("Third-Party NFT Chef", function () {
 
         // Fixtures can return anything you consider useful for your tests
         return { 
-            TAVAContract, SecondSkinNFTContract, ThirdPartyNFTContract, NFTMasterChefContract, NFTChefContract, owner, addr1, addr2
+            TAVAContract, NFTStakingContract, SecondSkinNFTContract, ThirdPartyNFTContract, NFTMasterChefContract, NFTChefContract, owner, addr1, addr2
         };
     }
 
@@ -62,12 +71,12 @@ describe("Third-Party NFT Chef", function () {
     describe("NFTMasterChef: Deployment should work correctly", function () {
         // If the callback function is async, Mocha will `await` it.
         it("Should set the right owner and secondskin nft", async function () {
-            const { SecondSkinNFTContract, NFTMasterChefContract, owner } = await loadFixture(deployFixture);
+            const { NFTStakingContract, NFTMasterChefContract, owner } = await loadFixture(deployFixture);
 
             // This test expects the owner variable stored in the contract to be
             // equal to our Signer's owner.            
             expect(await NFTMasterChefContract.owner()).to.equal(owner.address);
-            expect(await NFTMasterChefContract.secondskinNFT()).to.equal(SecondSkinNFTContract.address);
+            expect(await NFTMasterChefContract.nftstaking()).to.equal(NFTStakingContract.address);
 
         });
 
@@ -104,12 +113,12 @@ describe("Third-Party NFT Chef", function () {
     describe("NFTChef: Deployment should work correctly", function () {
         // If the callback function is async, Mocha will `await` it.
         it("Should set the right owner and right settings", async function () {
-            const { TAVAContract, SecondSkinNFTContract, ThirdPartyNFTContract, NFTMasterChefContract, NFTChefContract, owner } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, ThirdPartyNFTContract, NFTMasterChefContract, NFTChefContract, owner } = await loadFixture(deployFixture);
             // This test expects the owner variable stored in the contract to be
             // equal to our Signer's owner.            
             expect(await NFTChefContract.owner()).to.equal(owner.address);
             expect(await NFTChefContract.NFT_MASTER_CHEF_FACTORY()).to.equal(NFTMasterChefContract.address);
-            expect(await NFTChefContract.secondSkinNFT()).to.equal(SecondSkinNFTContract.address);
+            expect(await NFTChefContract.nftstaking()).to.equal(NFTStakingContract.address);
             expect(await NFTChefContract.rewardNFT()).to.equal(ThirdPartyNFTContract.address);
             expect(await NFTChefContract.stakedToken()).to.equal(TAVAContract.address);
             expect(await NFTChefContract.booster_total()).to.equal(3);
@@ -122,7 +131,7 @@ describe("Third-Party NFT Chef", function () {
 
         // If the callback function is async, Mocha will `await` it.
         it("SetBoosterValue: Setting NFTChef should work", async function () {
-            const { TAVAContract, SecondSkinNFTContract, ThirdPartyNFTContract, NFTMasterChefContract, NFTChefContract, owner } = await loadFixture(deployFixture);
+            const { NFTChefContract } = await loadFixture(deployFixture);
             // set another booster
             console.log("√ SetBoosterValue: Out range of index should failed");
             await expect(
@@ -200,8 +209,8 @@ describe("Third-Party NFT Chef", function () {
     // You can nest describe calls to create subsections.
     describe("NFTChef: Stake && Unstake", function () {
         // get required amount for stake.
-        const getRequiredAmount = async (SecondSkinNFTContract, NFTChefContract, period, sender) => {
-            const nftBalance = await SecondSkinNFTContract.balanceOf(sender);
+        const getRequiredAmount = async (NFTStakingContract, NFTChefContract, period, sender) => {
+            const nftBalance = await NFTStakingContract.getStakedNFTCount(sender);
             const configData = await NFTChefContract.getConfig(period);
             const boosterValue = await NFTChefContract.getBoosterValue(nftBalance);
             let requireAmount = ethers.utils.formatEther(configData.requiredLockAmount);
@@ -230,11 +239,11 @@ describe("Third-Party NFT Chef", function () {
         }
 
         it("stake should work", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setConfig(NFTChefContract);
 
             const period = 30; // 30days;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
 
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
@@ -243,11 +252,11 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Double stake should not work", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setConfig(NFTChefContract);
 
             const period = 90; // 90days;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
             // stake 30days
@@ -261,11 +270,11 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Extend staking duration should work", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setConfig(NFTChefContract);
 
             const period = 90; // 90days;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
             // stake 30days
@@ -309,11 +318,11 @@ describe("Third-Party NFT Chef", function () {
         }
 
         it("Unstake should not work before unlock", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setShortTimeConfig(NFTChefContract);
 
             const period = 9; // 9 seconds;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
@@ -326,11 +335,11 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Unstake should work after unlocked", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setShortTimeConfig(NFTChefContract);
 
             const period = 9; // 9 seconds;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
@@ -360,19 +369,21 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Booster value changes correctly based on NFT amount", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, SecondSkinNFTContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setShortTimeConfig(NFTChefContract);
 
             // SecondSkinNFT check.
-            const ssn_balance = await SecondSkinNFTContract.balanceOf(owner.address);
+            const ssn_balance = await NFTStakingContract.getStakedNFTCount(owner.address);
             expect(ssn_balance).to.be.equal(0);
             // mint ssn
             await SecondSkinNFTContract.mint("test_uri");
-            const ssn_balance2 = await SecondSkinNFTContract.balanceOf(owner.address);
+            await NFTStakingContract.stake([1]);
+
+            const ssn_balance2 = await NFTStakingContract.getStakedNFTCount(owner.address);
             expect(ssn_balance2).to.be.equal(1);
 
             const period = 3; // 9 seconds;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
@@ -397,19 +408,21 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Extend days option: Booster value changes correctly based on NFT amount", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, SecondSkinNFTContract, NFTStakingContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setShortTimeConfig(NFTChefContract);
 
             // SecondSkinNFT check.
-            const ssn_balance = await SecondSkinNFTContract.balanceOf(owner.address);
+            const ssn_balance = await NFTStakingContract.getStakedNFTCount(owner.address);
             expect(ssn_balance).to.be.equal(0);
             // mint ssn
             await SecondSkinNFTContract.mint("test_uri");
-            const ssn_balance2 = await SecondSkinNFTContract.balanceOf(owner.address);
+            await NFTStakingContract.stake([1]);
+
+            const ssn_balance2 = await NFTStakingContract.getStakedNFTCount(owner.address);
             expect(ssn_balance2).to.be.equal(1);
 
             const period = 3; // 9 seconds;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, owner.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, owner.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount);
@@ -424,7 +437,7 @@ describe("Third-Party NFT Chef", function () {
             
             // Extend from 3 seconds to 6 seconds
             const period2 = 6;
-            const requireAmount2 = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period2, owner.address);
+            const requireAmount2 = await getRequiredAmount(NFTStakingContract, NFTChefContract, period2, owner.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.approve(NFTChefContract.address, requireAmount2.sub(requireAmount));
@@ -450,24 +463,25 @@ describe("Third-Party NFT Chef", function () {
         });
 
         it("Panalty Check: Booster value changes correctly based on NFT amount", async function () {
-            const { TAVAContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
+            const { TAVAContract, NFTStakingContract, SecondSkinNFTContract, NFTChefContract, owner, addr1 } = await loadFixture(deployFixture);
             await setShortTimeConfig(NFTChefContract);
 
             // Transfer TAVA token to addr1
             await TAVAContract.transfer(addr1.address, ethers.utils.parseEther("1000"));
 
             // SecondSkinNFT check.
-            const ssn_balance = await SecondSkinNFTContract.connect(addr1).balanceOf(owner.address);
+            const ssn_balance = await NFTStakingContract.connect(addr1).getStakedNFTCount(owner.address);
             expect(ssn_balance).to.be.equal(0);
             // mint ssn
             await SecondSkinNFTContract.mint("test_uri");
-            await SecondSkinNFTContract.transferFrom(owner.address, addr1.address, 0);
+            await SecondSkinNFTContract.transferFrom(owner.address, addr1.address, 1);
+            await NFTStakingContract.connect(addr1).stake([1]);
 
-            const ssn_balance2 = await SecondSkinNFTContract.balanceOf(addr1.address);
+            const ssn_balance2 = await NFTStakingContract.getStakedNFTCount(addr1.address);
             expect(ssn_balance2).to.be.equal(1);
 
             const period = 3; // 9 seconds;
-            const requireAmount = await getRequiredAmount(SecondSkinNFTContract, NFTChefContract, period, addr1.address);
+            const requireAmount = await getRequiredAmount(NFTStakingContract, NFTChefContract, period, addr1.address);
             // console.log(requireAmount)
             // Before stake, need to approve token
             await TAVAContract.connect(addr1).approve(NFTChefContract.address, requireAmount);
@@ -481,7 +495,7 @@ describe("Third-Party NFT Chef", function () {
             )
             
             // Transfer NFT to others.
-            await SecondSkinNFTContract.connect(addr1).transferFrom(addr1.address, owner.address, 0); // tokenID = 0
+            await SecondSkinNFTContract.connect(addr1).transferFrom(addr1.address, owner.address, 1); // tokenID = 0
             
             const panaltyAmount = await NFTChefContract.connect(addr1).getPanaltyAmount(addr1.address);
             expect(panaltyAmount).to.be.equal(ethers.utils.parseEther("1000").sub(requireAmount));

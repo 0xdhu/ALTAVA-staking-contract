@@ -44,9 +44,9 @@ contract SecondSkinNFT is ERC721URIStorage {
      * @param _tokenUri -> the address pointing to the off-chain storage
      */
     function mint(string memory _tokenUri) public onlyOwner {
+        tokenCounter++;
         //perform mint actions
         uint currentTokenId = tokenCounter;
-        tokenCounter++;
         _safeMint(msg.sender, currentTokenId);
         _setTokenURI(currentTokenId, _tokenUri);
         emit Minted(currentTokenId, _tokenUri);
