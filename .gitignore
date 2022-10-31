@@ -5,3 +5,10 @@
 .DS_Store
 /artifacts
 /cache
+
+NFTFactory.sol
+SecondSkinNFT.sol
+TAVA.sol
+ThirdPartyNFT.sol
+ThirdPartyToken.sol
+TokenFactory.sol
