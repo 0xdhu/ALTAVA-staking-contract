@@ -10,6 +10,9 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+import "./interfaces/INFTStaking.sol";
+import "./interfaces/IMasterChef.sol";
+
 // import "hardhat/console.sol";
 
 /**
@@ -26,6 +29,8 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     IERC20Metadata public stakedToken;
     // rewardToken
     IERC20Metadata public rewardToken;
+    // Second Skin NFT Staking Contract
+    INFTStaking public nftstaking;
 
     // admin withdrawable
     bool adminWithdrawable = true;
@@ -36,12 +41,14 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      *  @dev Structs to store user staking data.
      */
     struct UserInfo {
-        uint256 depositAmount;
-        uint256 depositTime;
-        uint256 endTime;
+        uint256 lockedAmount;
+        uint256 lockStartTime; // lock start time.
+        uint256 lockEndTime; // lock end time.
+        uint256 lastUserActionTime; // keep track of the last user action time.
+        bool locked; //lock status.
         uint256 rewards;
         uint256 rewardDebt;
-        bool paid;
+        uint256 boosterValue; // current booster value
     }
 
     // admin
@@ -67,11 +74,21 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     // third-party rewardToken created per block.
     uint256 public rewardPerBlock;
 
+    // Booster values
+    // holding amount => booster percent
+    // Percent real value: need to divide by 100. ex: 152 means 1.52%
+    // index => value
+    mapping(uint256 => uint256) private boosters;
+    // booster total number
+    uint256 public booster_total;
+    // Booster denominator
+    uint256 public DENOMINATOR = 10000;
 
-    event Stake(address indexed user, uint256 amount);
+    uint256 public MIN_LOCK_DURATION = 1 weeks;
+    uint256 public MAX_LOCK_DURATION = 1000 days;
+    uint256 public constant MIN_DEPOSIT_AMOUNT = 0.00001 ether;
+
     event NewPoolLimit(uint256 poolLimitPerUser);
-    event Withdraw(address indexed user, uint256 stakedAmount, uint256 totalReward);
-    event EmergencyWithdraw(address indexed user, uint256 amount);
 
     constructor(
     ) {
@@ -99,7 +116,8 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         uint256 _poolLimitPerUser,
         uint256 _numberBlocksForUserLimit,
         address _admin,
-        address _newOwner
+        address _newOwner,
+        address _nftstaking
     ) external {
         require(!isInitialized, "Already initialized");
         require(msg.sender == MASTER_SMART_CHEF_FACTORY, "Not factory");
@@ -128,13 +146,86 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         lastRewardBlock = startBlock;
         // admin to do automatically withdraw
         admin = _admin;
+        // nft staking
+        nftstaking = INFTStaking(_nftstaking);
+
+
         // Transfer ownership to the admin address who becomes owner of the contract
         transferOwnership(_newOwner);
+    }
+
+    /**
+     * @dev calculate booster percent based on NFT holds
+     * 
+     * @param amount: amount of second skin amount of user wallet
+     */
+    function getBoosterValue(uint256 amount) public view returns(uint256) {
+        if(amount > booster_total) {
+            return boosters[booster_total];
+        } else {
+            return boosters[amount];
+        }
+    }
+
+    /**
+     * @dev get booster percent of user wallet.
+     */
+    function getStakerBoosterValue(address sender) public view returns(uint256) {
+        uint256 amount = nftstaking.getStakedNFTCount(sender);
+        return getBoosterValue(amount);
+    }
+
+    function setBoosterArray(
+        uint256[] calldata _booster        
+    ) external onlyOwner {
+        for(uint256 i=0; i < _booster.length; i++) {
+            require(_booster[i] > 0, "Booster value should not be zero");
+            require(_booster[i] < 5000, "Booster value should not over 50%");
+            if(i > 0) {
+                require(_booster[i] >= _booster[i-1], "Booster value should not be increased");
+            }
+        }
+        // If didnot stake any amount of NFT, booster is just zero
+        boosters[0] = 0;
+        for(uint256 i=0; i < _booster.length; i++) {
+            boosters[i+1] = _booster[i];
+        }
+        booster_total = _booster.length;
+    }
+
+    /**
+     * @dev set booster value on index
+     */
+    function setBoosterValue(uint256 idx, uint256 value) public onlyOwner {
+        require(idx <= booster_total + 1, "Out of index");
+        require(idx > 0, "Index should not be zero");
+        require(value > 0, "Booster value should not be zero");
+        require(value < 5000, "Booster value should not be over than 50%");
+        require(boosters[idx] != value, "Amount in use");
+        boosters[idx] = value;
+        if(idx == booster_total+1) booster_total = booster_total.add(1);
+
+        if(idx > 1 && idx <= booster_total) {
+            require(boosters[idx] >= boosters[idx-1], "Booster value should be increased");
+            if(idx < booster_total) {
+                require(boosters[idx+1] >= boosters[idx], "Booster value should be increased");
+            }
+        } else if(idx == 1 && booster_total > 1) {
+            require(boosters[idx+1] >= boosters[idx], "Booster value should be increased");
+        }
     }
 
     // modifier to check admin
     modifier onlyAdmin {
         require(admin == msg.sender, "Invalid admin");
+        _;
+    }
+
+    /**
+     * @notice Checks if the msg.sender is either the cake owner address or the operator address.
+     */
+    modifier onlyOperatorOrStaker(address _user) {
+        require(msg.sender == _user || msg.sender == admin, "Not operator or staker");
         _;
     }
 
@@ -147,10 +238,11 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     }
 
     /*
-     * @notice Deposit staked tokens and collect reward tokens (if any)
-     * @param _amount: amount to stake
+     * @notice Stake TAVA token to get rewarded with third-party nft. 
+     * @param _amount: amount to lock
+     * @param _lockDuration: duration to lock
      */
-    function stake(uint256 _amount)
+    function stake(uint256 _amount, uint256 _lockDuration)
         external
         _realAddress(msg.sender)
         _hasAllowance(msg.sender, _amount)
@@ -158,83 +250,108 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         whenNotPaused
         returns (bool)
     {
-        require(_amount > 0, "Can't stake 0 amount");
-        return (_stake(_amount));
+        require(_amount > 0 || _lockDuration > 0, "Nothing to deposit");
+        return (_stake(_amount, _lockDuration, msg.sender));
     }
 
-    function _stake(uint256 _amount) private returns (bool) {
-        UserInfo storage user = userInfo[msg.sender];
+    function _stake(uint256 _amount, uint256 _lockDuration, address _user) internal returns (bool) {
+        UserInfo storage user = userInfo[_user];
+        uint256 currentLockedAmount = _amount;
+        // which means extend days
+        if (user.lockEndTime >= block.timestamp) {
+            require(_amount == 0, "Extend lock duration");
+            require(_lockDuration > user.lockEndTime - user.lockStartTime, "Not enough duration to extends");
+            currentLockedAmount = user.lockedAmount;
+        } else {
+            // when user deposit newly
+            require(user.locked == false,  "Unlock previos locked staking first");
+            
+            userLimit = hasUserLimit(); 
+            require(!userLimit || (currentLockedAmount <= poolLimitPerUser), "Stake: Amount above limit");
+            user.lockStartTime = block.timestamp;
+        }
 
-        userLimit = hasUserLimit(); 
-        require(!userLimit || ((_amount + user.depositAmount) <= poolLimitPerUser), "Stake: Amount above limit");
+        require(_lockDuration>= MIN_LOCK_DURATION, "Minimum lock period is one week");
+        require(_lockDuration <= MAX_LOCK_DURATION, "Maximum lock period exceeded");
+
+
         _updatePool();
 
-        if (user.depositAmount > 0) {
-            uint256 pending = ((user.depositAmount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
+        if (user.lockedAmount > 0) {
+            uint256 pending = ((user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
             if (pending > 0) {
                 user.rewards = user.rewards.add(pending);
             }
         }
 
         if (_amount > 0) {
-            user.depositAmount = user.depositAmount + _amount;
-            stakedToken.safeTransferFrom(address(msg.sender), address(this), _amount);
+            user.lockedAmount = user.lockedAmount.add(_amount);
+            stakedToken.safeTransferFrom(address(_user), address(this), _amount);
         }
 
-        user.rewardDebt = (user.depositAmount * accTokenPerShare) / PRECISION_FACTOR;
-        
-        emit Stake(msg.sender, _amount);
+        user.rewardDebt = (user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR;
+        user.lastUserActionTime = block.timestamp;
+        user.lockEndTime = user.lockStartTime.add(_lockDuration);
+        user.locked = true;
+        user.boosterValue = getStakerBoosterValue(_user);
+
+
+        IMasterChef(MASTER_SMART_CHEF_FACTORY).emitStakedEventFromSubChef(
+            _user, _amount, user.lockStartTime, user.lockEndTime, block.timestamp, user.rewards, user.rewardDebt, user.boosterValue
+        );
         return true;
     }
 
     /**
-     * @notice Withdraw staked tokens
+     * @notice Unlock staked tokens (Unlock)
      * @dev user side withdraw manually
      */
-    function withdraw() external _realAddress(msg.sender) nonReentrant {
-        require(adminWithdrawable == false, "withdraw would be done automatically");
-        _withdraw(msg.sender);
+    function unlock() external _realAddress(msg.sender) nonReentrant {
+        _unlock(msg.sender);
     }
 
-    /**
-     * @notice Withdraw staked tokens
-     * @dev admin will transfer collected reward tokens
-     */
-    function adminWithdraw(address sender) external _realAddress(msg.sender) nonReentrant onlyAdmin {
-        require(adminWithdrawable, "withdraw cannot be done automatically");
-        _withdraw(sender);
-    }
-
-    function _withdraw(address from) private returns (bool) {
-        uint256 _amount = userInfo[from].depositAmount;
-        require(_amount > 0, "Empty to withdraw");
+    function _unlock(address _user) private onlyOperatorOrStaker(_user) returns (bool) {
+        UserInfo storage user = userInfo[_user];
+        uint256 _amount = user.lockedAmount;
+        require(_amount > 0, "Empty to unlock");
+        require(user.locked == true, "Already unlocked");
+        require(user.lockEndTime < block.timestamp, "Still in locked");
 
         _updatePool();
 
-        UserInfo storage user = userInfo[from];
-        // Calculate total reward
-        uint256 totalReward = _calculate(from);
-
-        // set zero
-        user.depositAmount = user.depositAmount - _amount;
-        user.rewards = 0;
-        user.rewardDebt = 0;
-
-        // withdraw staked token
-        stakedToken.safeTransfer(address(from), _amount);
-
-        // Here, should be check pool balance as well as if admin withdraw option has been enabled or not
-        if (adminWithdrawable == false) {
-            if (totalReward > 0) {
-                require(rewardToken.balanceOf(address(this)) >= totalReward, "Insufficient pool");
-                rewardToken.safeTransfer(address(from), totalReward);
+        if (_amount > 0) {
+            uint256 pending = ((_amount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
+            if (pending > 0) {
+                user.rewards = user.rewards.add(pending);
             }
         }
 
-        emit Withdraw(from, _amount, totalReward);
+        // set zero
+        user.lockedAmount = 0;
+        user.locked = false;
+        user.lastUserActionTime = block.timestamp;
+        user.boosterValue = getStakerBoosterValue(_user);
+        user.rewardDebt = 0;
+
+        // unlock staked token
+        stakedToken.safeTransfer(address(_user), _amount);
+
+        uint256 rewardAmount = user.rewards;
+        // Here, should be check pool balance as well as if admin is able to harvest users reward to users.
+        if (adminWithdrawable == false && rewardAmount > 0) {
+            require(rewardToken.balanceOf(address(this)) >= rewardAmount, "Insufficient pool");
+            user.rewards = 0;
+
+            rewardToken.safeTransfer(address(_user), rewardAmount);
+        }
+
+
+        IMasterChef(MASTER_SMART_CHEF_FACTORY).emitUnstakedEventFromSubChef(
+            _user, user.lastUserActionTime, user.rewards, user.boosterValue
+        );
+        
         return true;
     }
-
 
     /**
      * @dev to calculate total rewards based on user rewards
@@ -250,7 +367,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     {        
         UserInfo memory user = userInfo[from];
         // Calculate total reward
-        uint256 pending = (user.depositAmount * accTokenPerShare) / PRECISION_FACTOR - user.rewardDebt;
+        uint256 pending = ((user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
         return user.rewards.add(pending);
     }
 
@@ -270,8 +387,8 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         }
 
         uint256 multiplier = _getMultiplier(lastRewardBlock, block.number);
-        uint256 cakeReward = multiplier * rewardPerBlock;
-        accTokenPerShare = accTokenPerShare + (cakeReward * PRECISION_FACTOR) / stakedTokenSupply;
+        uint256 tavaReward = multiplier * rewardPerBlock;
+        accTokenPerShare = accTokenPerShare + (tavaReward * PRECISION_FACTOR) / stakedTokenSupply;
         lastRewardBlock = block.number;
     }
 
@@ -290,49 +407,12 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         }
     }
     
-    function emergencyWithdraw()
-        external
-        _realAddress(msg.sender)
-        nonReentrant
-    {
-        UserInfo storage user = userInfo[msg.sender];
-        uint256 amountToTransfer = user.depositAmount;
-        user.depositAmount = 0;
-        user.rewardDebt = 0;
-
-        if (amountToTransfer > 0) {
-            stakedToken.safeTransfer(address(msg.sender), amountToTransfer);
-        }
-
-        emit EmergencyWithdraw(msg.sender, user.depositAmount);
-    }
-
     /*
      * @notice Stop rewards
      * @dev Only callable by owner. Needs to be for emergency.
      */
     function emergencyRewardWithdraw(uint256 _amount) external onlyOwner {
         rewardToken.safeTransfer(address(msg.sender), _amount);
-    }
-
-    function _payMe(address payer, uint256 amount) private returns (bool) {
-        return _payTo(payer, address(this), amount);
-    }
-
-    function _payTo(
-        address allower,
-        address receiver,
-        uint256 amount
-    ) private _hasAllowance(allower, amount) returns (bool) {
-        IERC20Metadata ERC20Interface = IERC20Metadata(stakedToken);
-        ERC20Interface.safeTransferFrom(allower, receiver, amount);
-        return true;
-    }
-
-    function _payDirect(address to, uint256 amount) private returns (bool) {
-        IERC20Metadata ERC20Interface = IERC20Metadata(stakedToken);
-        ERC20Interface.safeTransfer(to, amount);
-        return true;
     }
 
     modifier _realAddress(address addr) {
