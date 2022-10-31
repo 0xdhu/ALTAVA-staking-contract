@@ -11,7 +11,7 @@ import "./NFTChef.sol";
 contract NFTMasterChef is Ownable{
     using SafeMath for uint256;    
 
-    // Second Skin NFT
+    // Second Skin NFT Staking Contract
     address public nftstaking;
     // ALTAVA TOKEN (TAVA)
     address public stakedToken;

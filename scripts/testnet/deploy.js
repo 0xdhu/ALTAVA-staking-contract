@@ -38,6 +38,15 @@ async function main() {
   );
   await NFTMasterChefContract.deployed();
   console.log("NFTMasterChef: ", NFTMasterChefContract.address);
+
+  // Deploy MasterChef contract
+  const MasterChef = await ethers.getContractFactory("MasterChef");
+  const MasterChefContract = await MasterChef.deploy(
+    TAVAContract.address,
+    StakingContract.address
+  );
+  await MasterChefContract.deployed();
+  console.log("MasterChef: ", MasterChefContract.address);
 }
 
 main()

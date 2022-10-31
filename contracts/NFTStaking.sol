@@ -2,7 +2,6 @@
 pragma solidity >=0.6.0 <0.9.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
-
 /**
  * @dev SecondSKin NFT Staking
  */
@@ -131,23 +130,28 @@ contract NFTStaking is Ownable{
     /**
      * @dev get staked info
      */
-    function getStakedTokenIds(address _sender) external view returns(uint256[] memory result) {
+    function getStakedTokenIds(address _sender) external view returns(uint256[] memory) {
         uint256 stakedAmount = stakingAmounts[_sender];
+        uint256 liveStakedAmount = getStakedNFTCount(_sender);
         uint256 tempCount = 0;
+
+        uint256[] memory tokenIds = new uint256[](liveStakedAmount);
+
         for(uint256 i=0; i < stakedAmount; i++) {
             StakeInfo memory stakeInfo = stakedIds[_sender][i];
             bool isOwned = secondskinNFT.ownerOf(stakeInfo.tokenId) == _sender;
             if(stakeInfo.isStaked && isOwned) {
-                result[tempCount] = stakeInfo.tokenId;
+                tokenIds[tempCount] = stakeInfo.tokenId;
                 tempCount++;
             }
         }
+        return tokenIds;
     }
 
     /**
      * @dev get staked balance
      */
-    function getStakedNFTCount(address sender) external view returns(uint256 tempCount) {
+    function getStakedNFTCount(address sender) public view returns(uint256 tempCount) {
         uint256 stakedAmount = stakingAmounts[sender];
         tempCount = 0;
         for(uint256 i=0; i < stakedAmount; i++) {
