@@ -10,6 +10,7 @@
     "test0": "npx hardhat test ./test/0_nftstaking.js",
     "test1": "npx hardhat test ./test/1_nftchef.js",
     "test2": "npx hardhat test ./test/2_smartchef.js",
+    "test": "npx hardhat test",
     "deploy:hardhat": "npx hardhat run scripts/testnet/deploy.js",
     "deploy:testnet": "npx hardhat run scripts/testnet/deploy.js --network testnet",
     "deploy:goerli": "npx hardhat run scripts/testnet/deploy.js --network goerli",

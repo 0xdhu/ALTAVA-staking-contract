@@ -306,11 +306,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      * @notice Unlock staked tokens (Unlock)
      * @dev user side withdraw manually
      */
-    function unlock() external _realAddress(msg.sender) nonReentrant {
-        _unlock(msg.sender);
-    }
-
-    function _unlock(address _user) private onlyOperatorOrStaker(_user) returns (bool) {
+    function unlock(address _user) external _realAddress(_user) onlyOperatorOrStaker(_user) nonReentrant returns (bool) {
         UserInfo storage user = userInfo[_user];
         uint256 _amount = user.lockedAmount;
         require(_amount > 0, "Empty to unlock");

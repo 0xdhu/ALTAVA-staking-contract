@@ -10,7 +10,7 @@ describe("Secondskin NFT Staking for booster", function () {
     async function deployFixture() {
         // Get the ContractFactory and Signers here.
         const [owner, addr1, addr2] = await ethers.getSigners();
-0
+
         // Deploy SecondskinNFT contract
         const SecondSkinNFT = await ethers.getContractFactory("SecondSkinNFT");
         const SecondSkinNFTContract = await SecondSkinNFT.deploy(

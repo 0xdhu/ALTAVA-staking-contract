@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
-const { sleep } = require("./utils");
+// const { sleep } = require("./utils");
 
 // ALTAVA Token (TAVA)
 // const initialSupply = "5000";
@@ -346,7 +346,8 @@ describe("Third-Party NFT Chef", function () {
             // Lock 3 seconds
             await NFTChefContract.stake(3);
             // Wait 4 seconds for unlocking.
-            await sleep(4*1000);
+            // await sleep(4*1000);
+            await ethers.provider.send('evm_increaseTime', [4]);
             // Unstake and check balance changes
             await expect(
                 NFTChefContract.unstake()
@@ -396,7 +397,8 @@ describe("Third-Party NFT Chef", function () {
                 [requireAmount, requireAmount.mul(-1)]
             )
             // Wait 4 seconds for unlocking.
-            await sleep(4*1000);
+            // await sleep(4*1000);
+            await ethers.provider.send('evm_increaseTime', [4]);
             // Unstake and check balance changes
             await expect(
                 NFTChefContract.unstake()
@@ -451,7 +453,8 @@ describe("Third-Party NFT Chef", function () {
             )
 
             // Wait 7 seconds for unlocking.
-            await sleep(7*1000);
+            // await sleep(7*1000);
+            await ethers.provider.send('evm_increaseTime', [7]);
             // Unstake and check balance changes
             await expect(
                 NFTChefContract.unstake()
@@ -501,7 +504,8 @@ describe("Third-Party NFT Chef", function () {
             expect(panaltyAmount).to.be.equal(ethers.utils.parseEther("1000").sub(requireAmount));
 
             // Wait 4 seconds for unlocking.
-            await sleep(4*1000);
+            // await sleep(4*1000);
+            await ethers.provider.send('evm_increaseTime', [4]);
             // Unstake and check balance changes
             await expect(
                 NFTChefContract.connect(addr1).unstake()
