@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 // custom defined interface
 import "./NFTChef.sol";
@@ -17,7 +17,7 @@ contract NFTMasterChef is Ownable {
     address public stakedToken;
 
     // deployed chef total count
-    uint256 public total_count;
+    uint256 public totalCount;
     // id => deployed chef address
     mapping(uint256 => address) private chefAddress;
 
@@ -25,31 +25,31 @@ contract NFTMasterChef is Ownable {
     event NewNFTChefContract(
         string id,
         address indexed chef,
-        address indexed reward_nft
+        address indexed rewardNFT
     );
 
     // Staked Event
     event Staked(
         address indexed chef,
         address indexed sender,
-        uint256 stake_index,
-        uint256 staked_amount,
-        uint256 locked_at,
-        uint256 lock_duration,
-        uint256 unlock_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 stakedAmount,
+        uint256 lockedAt,
+        uint256 lockDuration,
+        uint256 unlockAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     );
 
     // Unstake Event
     event Unstake(
         address indexed chef,
         address indexed sender,
-        uint256 stake_index,
-        uint256 withdraw_amount,
-        uint256 withdraw_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 withdrawAmount,
+        uint256 withdrawAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     );
 
     // Event whenever updates the "Required Lock Amount"
@@ -57,14 +57,14 @@ contract NFTMasterChef is Ownable {
         address indexed chef,
         address indexed sender,
         uint256 period,
-        uint required_amount,
-        uint rewardnft_amount,
-        bool is_live
+        uint requiredAmount,
+        uint rewardnftAmount,
+        bool isLive
     );
 
     modifier onlySubChef() {
         bool isSubChef = false;
-        for (uint256 i = 0; i < total_count; i++) {
+        for (uint256 i = 0; i < totalCount; i++) {
             if (chefAddress[i] == msg.sender) {
                 isSubChef = true;
             }
@@ -74,11 +74,8 @@ contract NFTMasterChef is Ownable {
     }
 
     constructor(address _stakedToken, address _nftstaking) {
-        require(
-            _nftstaking != address(0x0),
-            "Address should not be zero address"
-        );
-        require(IERC20(_stakedToken).totalSupply() >= 0);
+        require(_nftstaking != address(0x0), "Cannot be zero address");
+        require(IERC20(_stakedToken).totalSupply() >= 0, "Invalid token");
         nftstaking = _nftstaking;
         stakedToken = _stakedToken;
     }
@@ -87,10 +84,7 @@ contract NFTMasterChef is Ownable {
      * set nftstaking contract address
      */
     function setNFTStaking(address _nftstaking) external onlyOwner {
-        require(
-            _nftstaking != address(0x0),
-            "Address should not be zero address"
-        );
+        require(_nftstaking != address(0x0), "Cannot be zero address");
         nftstaking = _nftstaking;
     }
 
@@ -104,14 +98,14 @@ contract NFTMasterChef is Ownable {
         address _rewardNFT,
         uint256[] calldata _booster
     ) external onlyOwner {
-        require(_rewardNFT != address(0x0));
+        require(_rewardNFT != address(0x0), "Cannot be zero address");
         for (uint256 i = 0; i < _booster.length; i++) {
             require(_booster[i] > 0, "Booster value should not be zero");
-            require(_booster[i] < 5000, "Booster value should not over 50%");
+            require(_booster[i] < 5000, "Booster rate: overflow 50%");
             if (i > 0) {
                 require(
                     _booster[i] >= _booster[i - 1],
-                    "Booster value should not be increased"
+                    "Booster value: invalid"
                 );
             }
         }
@@ -143,8 +137,8 @@ contract NFTMasterChef is Ownable {
         );
 
         // register address
-        chefAddress[total_count] = nftChefAddress;
-        total_count = total_count.add(1);
+        chefAddress[totalCount] = nftChefAddress;
+        totalCount = totalCount.add(1);
 
         // emit event
         emit NewNFTChefContract(_id, nftChefAddress, _rewardNFT);
@@ -154,7 +148,7 @@ contract NFTMasterChef is Ownable {
      * get chef address with id
      */
     function getChefAddress(uint256 id) external view returns (address) {
-        require(total_count > id, "Chef: not exist");
+        require(totalCount > id, "Chef: not exist");
         return chefAddress[id];
     }
 
@@ -163,24 +157,24 @@ contract NFTMasterChef is Ownable {
      */
     function emitStakedEventFromSubChef(
         address sender,
-        uint256 stake_index,
-        uint256 staked_amount,
-        uint256 locked_at,
-        uint256 lock_duration,
-        uint256 unlock_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 stakedAmount,
+        uint256 lockedAt,
+        uint256 lockDuration,
+        uint256 unlockAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     ) external onlySubChef {
         emit Staked(
             msg.sender,
             sender,
-            stake_index,
-            staked_amount,
-            locked_at,
-            lock_duration,
-            unlock_at,
-            nft_balance,
-            booster_percent
+            stakeIndex,
+            stakedAmount,
+            lockedAt,
+            lockDuration,
+            unlockAt,
+            nftBalance,
+            boosterPercent
         );
     }
 
@@ -189,20 +183,20 @@ contract NFTMasterChef is Ownable {
      */
     function emitUnstakedEventFromSubChef(
         address sender,
-        uint256 stake_index,
-        uint256 withdraw_amount,
-        uint256 withdraw_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 withdrawAmount,
+        uint256 withdrawAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     ) external onlySubChef {
         emit Unstake(
             msg.sender,
             sender,
-            stake_index,
-            withdraw_amount,
-            withdraw_at,
-            nft_balance,
-            booster_percent
+            stakeIndex,
+            withdrawAmount,
+            withdrawAt,
+            nftBalance,
+            boosterPercent
         );
     }
 
@@ -212,17 +206,17 @@ contract NFTMasterChef is Ownable {
     function emitAddedRequiredLockAmountEventFromSubChef(
         address sender,
         uint256 period,
-        uint required_amount,
-        uint rewardnft_amount,
-        bool is_live
+        uint requiredAmount,
+        uint rewardnftAmount,
+        bool isLive
     ) external onlySubChef {
         emit AddedRequiredLockAmount(
             msg.sender,
             sender,
             period,
-            required_amount,
-            rewardnft_amount,
-            is_live
+            requiredAmount,
+            rewardnftAmount,
+            isLive
         );
     }
 }

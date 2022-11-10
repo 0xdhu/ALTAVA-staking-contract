@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
@@ -15,8 +15,8 @@ contract NFTStaking is Ownable {
         bool isStaked;
     }
 
-    // Important: secondskin nft has no token_id: 0
-    // staker address => staking index => token_id
+    // Important: secondskin nft has no tokenId: 0
+    // staker address => staking index => tokenId
     mapping(address => mapping(uint256 => StakeInfo)) public stakedIds;
     // staker address => staking amount
     mapping(address => uint256) public stakingAmounts;
@@ -25,17 +25,17 @@ contract NFTStaking is Ownable {
         secondskinNFT = _secondskinNFT;
     }
 
-    event NFTStaked(address indexed sender, uint256 token_id);
-    event NFTUnstaked(address indexed sender, uint256 token_id);
+    event NFTStaked(address indexed sender, uint256 tokenId);
+    event NFTUnstaked(address indexed sender, uint256 tokenId);
 
     /**
      * Stake NFT
      */
-    function stake(uint256[] calldata token_ids) external {
-        update_info(msg.sender);
+    function stake(uint256[] calldata tokenIds) external {
+        updateInfo(msg.sender);
 
-        for (uint256 i = 0; i < token_ids.length; i++) {
-            uint256 tokenId = token_ids[i];
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            uint256 tokenId = tokenIds[i];
             _stake(tokenId);
         }
     }
@@ -48,11 +48,11 @@ contract NFTStaking is Ownable {
         require(secondskinNFT.ownerOf(tokenId) == _sender, "You are not owner");
 
         uint256 stakedAmount = stakingAmounts[_sender];
-        uint256 current_index = get_staked_index(_sender, tokenId);
+        uint256 currentIndex = getStakedIndex(_sender, tokenId);
 
-        StakeInfo storage stakeInfo = stakedIds[_sender][current_index];
+        StakeInfo storage stakeInfo = stakedIds[_sender][currentIndex];
 
-        if (current_index < stakedAmount) {
+        if (currentIndex < stakedAmount) {
             if (stakeInfo.isStaked == false) {
                 stakeInfo.isStaked = true;
                 emit NFTStaked(_sender, tokenId);
@@ -74,11 +74,11 @@ contract NFTStaking is Ownable {
         require(secondskinNFT.ownerOf(tokenId) == _sender, "You are not owner");
 
         uint256 stakedAmount = stakingAmounts[_sender];
-        uint256 current_index = get_staked_index(_sender, tokenId);
-        require(current_index != stakedAmount, "Not staked yet");
+        uint256 currentIndex = getStakedIndex(_sender, tokenId);
+        require(currentIndex != stakedAmount, "Not staked yet");
 
-        StakeInfo storage stakeInfo = stakedIds[_sender][current_index];
-        if (current_index < stakedAmount && stakeInfo.isStaked == true) {
+        StakeInfo storage stakeInfo = stakedIds[_sender][currentIndex];
+        if (currentIndex < stakedAmount && stakeInfo.isStaked == true) {
             stakeInfo.isStaked = false;
 
             emit NFTUnstaked(_sender, tokenId);
@@ -88,7 +88,7 @@ contract NFTStaking is Ownable {
     /**
      * @dev Since staker might transferred his NFT to others, staking info should be updated
      */
-    function update_info(address _sender) public {
+    function updateInfo(address _sender) public {
         uint256 stakedAmount = stakingAmounts[_sender];
         for (uint256 i = 0; i < stakedAmount; i++) {
             StakeInfo storage stakeInfo = stakedIds[_sender][i];
@@ -104,7 +104,7 @@ contract NFTStaking is Ownable {
     /**
      * @dev return current staked index
      */
-    function get_staked_index(address _sender, uint256 _tokenId)
+    function getStakedIndex(address _sender, uint256 _tokenId)
         private
         view
         returns (uint256)
@@ -119,7 +119,7 @@ contract NFTStaking is Ownable {
         return stakedAmount;
     }
 
-    function check_staked(address _sender, uint256 _tokenId)
+    function checkStaked(address _sender, uint256 _tokenId)
         external
         view
         returns (bool)

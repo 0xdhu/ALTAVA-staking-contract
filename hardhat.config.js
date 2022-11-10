@@ -21,7 +21,7 @@ const DEPLOYER_KEY = process.env.DEPLOYER_KEY;
 const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY;
 
 module.exports = {
-  solidity: "0.8.18",
+  solidity: "0.8.17",
   settings: { optimizer: { enabled: true, runs: 20 } },
   networks: {
     goerli: {

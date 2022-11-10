@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "./SmartChef.sol";
 
@@ -12,7 +12,7 @@ contract MasterChef is Ownable {
     // Second Skin NFT Staking Contract
     address public nftstaking;
     // deployed chef total count
-    uint256 public total_count;
+    uint256 public totalCount;
     // id => deployed chef address
     mapping(uint256 => address) private chefAddress;
 
@@ -46,7 +46,7 @@ contract MasterChef is Ownable {
 
     modifier onlySubChef() {
         bool isSubChef = false;
-        for (uint256 i = 0; i < total_count; i++) {
+        for (uint256 i = 0; i < totalCount; i++) {
             if (chefAddress[i] == msg.sender) {
                 isSubChef = true;
             }
@@ -56,10 +56,7 @@ contract MasterChef is Ownable {
     }
 
     constructor(address _nftstaking) {
-        require(
-            _nftstaking != address(0x0),
-            "Address should not be zero address"
-        );
+        require(_nftstaking != address(0x0), "Cannot be zero address");
         nftstaking = _nftstaking;
     }
 
@@ -67,10 +64,7 @@ contract MasterChef is Ownable {
      * set nftstaking contract address
      */
     function setNFTStaking(address _nftstaking) external onlyOwner {
-        require(
-            _nftstaking != address(0x0),
-            "Address should not be zero address"
-        );
+        require(_nftstaking != address(0x0), "Cannot be zero address");
         nftstaking = _nftstaking;
     }
 
@@ -88,9 +82,9 @@ contract MasterChef is Ownable {
         uint256 _numberBlocksForUserLimit,
         address _admin
     ) external onlyOwner {
-        require(_stakedToken.totalSupply() >= 0);
-        require(_rewardToken.totalSupply() >= 0);
-        require(_admin != address(0x0));
+        require(_stakedToken.totalSupply() >= 0, "Invalid token");
+        require(_rewardToken.totalSupply() >= 0, "Invalid token");
+        require(_admin != address(0x0), "Cannot be zero address");
 
         bytes memory bytecode = type(SmartChef).creationCode;
         // pass constructor argument
@@ -125,8 +119,8 @@ contract MasterChef is Ownable {
         );
 
         // register address
-        chefAddress[total_count] = smartChefAddress;
-        total_count = total_count.add(1);
+        chefAddress[totalCount] = smartChefAddress;
+        totalCount = totalCount.add(1);
 
         // emit event
         emit NewSmartChefContract(
@@ -142,7 +136,7 @@ contract MasterChef is Ownable {
      * get chef address with id
      */
     function getChefAddress(uint256 id) external view returns (address) {
-        require(total_count > id, "Chef: not exist");
+        require(totalCount > id, "Chef: not exist");
         return chefAddress[id];
     }
 

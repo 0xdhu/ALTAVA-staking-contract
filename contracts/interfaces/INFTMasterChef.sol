@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 interface INFTMasterChef {
     /**
@@ -8,13 +8,13 @@ interface INFTMasterChef {
      */
     function emitStakedEventFromSubChef(
         address sender,
-        uint256 stake_index,
-        uint256 staked_amount,
-        uint256 locked_at,
-        uint256 lock_duration,
-        uint256 unlock_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 stakedAmount,
+        uint256 lockedAt,
+        uint256 lockDuration,
+        uint256 unlockAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     ) external;
 
     /**
@@ -22,11 +22,11 @@ interface INFTMasterChef {
      */
     function emitUnstakedEventFromSubChef(
         address sender,
-        uint256 stake_index,
-        uint256 withdraw_amount,
-        uint256 withdraw_at,
-        uint256 nft_balance,
-        uint256 booster_percent
+        uint256 stakeIndex,
+        uint256 withdrawAmount,
+        uint256 withdrawAt,
+        uint256 nftBalance,
+        uint256 boosterPercent
     ) external;
 
     /**
@@ -35,8 +35,8 @@ interface INFTMasterChef {
     function emitAddedRequiredLockAmountEventFromSubChef(
         address sender,
         uint256 period,
-        uint required_amount,
-        uint rewardnft_amount,
-        bool is_live
+        uint requiredAmount,
+        uint rewardnftAmount,
+        bool isLive
     ) external;
 }

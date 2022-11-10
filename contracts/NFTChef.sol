@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,7 +18,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
 
     // The address of the smart chef factory
-    address public immutable NFT_MASTER_CHEF_FACTORY;
+    address public immutable nftMasterChefFactory;
 
     // Second Skin NFT Staking Contract
     INFTStaking public nftstaking;
@@ -61,13 +61,13 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     // index => value
     mapping(uint256 => uint256) private boosters;
     // booster total number
-    uint256 public booster_total;
+    uint256 public boosterTotal;
     // Booster denominator
-    uint256 public DENOMINATOR = 10000;
+    uint256 public constant DENOMINATOR = 10000;
 
     // Constructor (initialize some configurations)
     constructor() {
-        NFT_MASTER_CHEF_FACTORY = msg.sender;
+        nftMasterChefFactory = msg.sender;
     }
 
     /*
@@ -86,7 +86,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         uint256[] calldata _booster
     ) external {
         require(!isInitialized, "Already initialized");
-        require(msg.sender == NFT_MASTER_CHEF_FACTORY, "Not factory");
+        require(msg.sender == nftMasterChefFactory, "Not factory");
 
         // Make this contract initialized
         isInitialized = true;
@@ -100,7 +100,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < _booster.length; i++) {
             boosters[i + 1] = _booster[i];
         }
-        booster_total = _booster.length;
+        boosterTotal = _booster.length;
 
         // Transfer ownership to the admin address who becomes owner of the contract
         transferOwnership(_newOwner);
@@ -112,8 +112,8 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
      * @param amount: amount of second skin amount of user wallet
      */
     function getBoosterValue(uint256 amount) public view returns (uint256) {
-        if (amount > booster_total) {
-            return boosters[booster_total];
+        if (amount > boosterTotal) {
+            return boosters[boosterTotal];
         } else {
             return boosters[amount];
         }
@@ -135,29 +135,29 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
      * @dev set booster value on index
      */
     function setBoosterValue(uint256 idx, uint256 value) external onlyOwner {
-        require(idx <= booster_total + 1, "Out of index");
+        require(idx <= boosterTotal + 1, "Out of index");
         require(idx > 0, "Index should not be zero");
         require(value > 0, "Booster value should not be zero");
-        require(value < 5000, "Booster value should not be over than 50%");
+        require(value < 5000, "Booster rate: overflow 50%");
         require(boosters[idx] != value, "Amount in use");
         boosters[idx] = value;
-        if (idx == booster_total + 1) booster_total = booster_total.add(1);
+        if (idx == boosterTotal + 1) boosterTotal = boosterTotal.add(1);
 
-        if (idx > 1 && idx <= booster_total) {
+        if (idx > 1 && idx <= boosterTotal) {
             require(
                 boosters[idx] >= boosters[idx - 1],
-                "Booster value should be increased"
+                "Booster value: invalid"
             );
-            if (idx < booster_total) {
+            if (idx < boosterTotal) {
                 require(
                     boosters[idx + 1] >= boosters[idx],
-                    "Booster value should be increased"
+                    "Booster value: invalid"
                 );
             }
-        } else if (idx == 1 && booster_total > 1) {
+        } else if (idx == 1 && boosterTotal > 1) {
             require(
                 boosters[idx + 1] >= boosters[idx],
-                "Booster value should be increased"
+                "Booster value: invalid"
             );
         }
     }
@@ -185,7 +185,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
             );
         }
 
-        INFTMasterChef(NFT_MASTER_CHEF_FACTORY)
+        INFTMasterChef(nftMasterChefFactory)
             .emitAddedRequiredLockAmountEventFromSubChef(
                 msg.sender,
                 _lockPeriod,
@@ -216,10 +216,7 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         uint256 idx = userStakeIndex[_sender];
         // Get object of user info
         StakerInfo storage _userInfo = stakerInfos[_sender][idx];
-        require(
-            _userInfo.unstaked == false,
-            "This locked staking has been already unstaked"
-        );
+        require(_userInfo.unstaked == false, "Already unstaked");
 
         // This user have not staked yet or Extend days should be bigger than rock period
         require(_userInfo.lockDuration < _lockPeriod, "Stake: Invalid period");
@@ -235,16 +232,16 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         require(
             _userInfo.unlockAt >= block.timestamp ||
                 _userInfo.lockedAmount == 0,
-            "Expired. Please withdraw previous one and renew it"
+            "Expired: renew it"
         );
-        nftstaking.update_info(_sender);
+        nftstaking.updateInfo(_sender);
 
         // Balance of secondskin NFT
-        uint256 nft_balance = nftstaking.getStakedNFTCount(_sender);
+        uint256 nftBalance = nftstaking.getStakedNFTCount(_sender);
         // get booster percent
-        uint256 booster_value = getBoosterValue(nft_balance);
+        uint256 boosterValue = getBoosterValue(nftBalance);
         // decrease required amount
-        uint256 _decreaseAmount = requiredAmount.mul(booster_value).div(
+        uint256 _decreaseAmount = requiredAmount.mul(boosterValue).div(
             DENOMINATOR
         );
         uint256 _requiredAmount = requiredAmount - _decreaseAmount;
@@ -275,22 +272,22 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
             _userInfo.lockedAt = block.timestamp;
         }
 
-        uint256 _unlock_at = _userInfo.lockedAt.add(_lockPeriod);
+        uint256 _unlockAt = _userInfo.lockedAt.add(_lockPeriod);
 
         // Update userinfo to up-to-date info
         _userInfo.rewardAmount = _rewardNFTAmount;
         _userInfo.lockDuration = _lockPeriod;
-        _userInfo.unlockAt = _unlock_at;
+        _userInfo.unlockAt = _unlockAt;
 
-        INFTMasterChef(NFT_MASTER_CHEF_FACTORY).emitStakedEventFromSubChef(
+        INFTMasterChef(nftMasterChefFactory).emitStakedEventFromSubChef(
             _sender,
             idx,
             _userInfo.lockedAmount,
             _userInfo.lockedAt,
             _userInfo.lockDuration,
             _userInfo.unlockAt,
-            nft_balance,
-            booster_value
+            nftBalance,
+            boosterValue
         );
     }
 
@@ -314,51 +311,48 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         ChefConfig memory _chefConfig = chefConfig[_userInfo.lockDuration];
         uint256 requiredAmount = _chefConfig.requiredLockAmount;
         // Balance of NFT
-        uint256 nft_balance = nftstaking.getStakedNFTCount(_sender);
+        uint256 nftBalance = nftstaking.getStakedNFTCount(_sender);
         // get booster percent
-        uint256 booster_value = getBoosterValue(nft_balance);
-        uint256 _decreaseAmount = requiredAmount.mul(booster_value).div(
+        uint256 boosterValue = getBoosterValue(nftBalance);
+        uint256 _decreaseAmount = requiredAmount.mul(boosterValue).div(
             DENOMINATOR
         );
         uint256 _requiredAmount = requiredAmount.sub(_decreaseAmount);
 
         // Check pool balance
-        uint unstakable_amount = _userInfo.lockedAmount;
+        uint curLockedAmount = _userInfo.lockedAmount;
         require(
-            stakedToken.balanceOf(address(this)) >= unstakable_amount,
+            stakedToken.balanceOf(address(this)) >= curLockedAmount,
             "Token: Insufficient pool"
         );
-        require(
-            _userInfo.unstaked == false,
-            "This locked staking has been already unstaked"
-        );
+        require(_userInfo.unstaked == false, "Already unstaked");
         // Set flag unstaked
         _userInfo.unstaked = true;
 
+        // increase index
+        userStakeIndex[_sender] = idx + 1;
+
         // If require amount is bigger than current locked amount, which means user transferred NFT
         // that was used as booster
-        if (_requiredAmount > unstakable_amount) {
-            uint256 _panaltyAmount = _requiredAmount.sub(unstakable_amount);
-            uint256 withdrawAmount = unstakable_amount.sub(_panaltyAmount);
+        if (_requiredAmount > curLockedAmount) {
+            uint256 _panaltyAmount = _requiredAmount.sub(curLockedAmount);
+            uint256 withdrawAmount = curLockedAmount.sub(_panaltyAmount);
             // If user has no NFT that staked before atm, need to pay panalty
             stakedToken.transfer(owner(), _panaltyAmount);
             // transfer from pool to user
             stakedToken.transfer(_sender, withdrawAmount);
         } else {
             // transfer from pool to user
-            stakedToken.transfer(_sender, unstakable_amount);
+            stakedToken.transfer(_sender, curLockedAmount);
         }
 
-        // increase index
-        userStakeIndex[_sender] = idx + 1;
-
-        INFTMasterChef(NFT_MASTER_CHEF_FACTORY).emitUnstakedEventFromSubChef(
+        INFTMasterChef(nftMasterChefFactory).emitUnstakedEventFromSubChef(
             _sender,
             idx,
-            unstakable_amount,
+            curLockedAmount,
             block.timestamp,
-            nft_balance,
-            booster_value
+            nftBalance,
+            boosterValue
         );
     }
 
@@ -373,16 +367,16 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         ChefConfig memory _chefConfig = chefConfig[_userInfo.lockDuration];
         uint256 requiredAmount = _chefConfig.requiredLockAmount;
         // Balance of NFT
-        uint256 nft_balance = nftstaking.getStakedNFTCount(sender);
+        uint256 nftBalance = nftstaking.getStakedNFTCount(sender);
         // get booster percent
-        uint256 booster_value = getBoosterValue(nft_balance);
-        uint256 _decreaseAmount = requiredAmount.mul(booster_value).div(
+        uint256 boosterValue = getBoosterValue(nftBalance);
+        uint256 _decreaseAmount = requiredAmount.mul(boosterValue).div(
             DENOMINATOR
         );
         uint256 _requiredAmount = requiredAmount - _decreaseAmount;
-        uint unstakable_amount = _userInfo.lockedAmount;
-        if (_requiredAmount > unstakable_amount) {
-            uint256 _panaltyAmount = _requiredAmount.sub(unstakable_amount);
+        uint curLockedAmount = _userInfo.lockedAmount;
+        if (_requiredAmount > curLockedAmount) {
+            uint256 _panaltyAmount = _requiredAmount.sub(curLockedAmount);
             return _panaltyAmount;
         }
         return 0;

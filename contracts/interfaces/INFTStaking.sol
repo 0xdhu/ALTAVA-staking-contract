@@ -1,13 +1,13 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 interface INFTStaking {
     // update staked nft infos
-    function update_info(address _sender) external;
+    function updateInfo(address _sender) external;
 
     // check if he already staked this token id
-    function check_staked(address _sender, uint256 _tokenId)
+    function checkStaked(address _sender, uint256 _tokenId)
         external
         view
         returns (bool);

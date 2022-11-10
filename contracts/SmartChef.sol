@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity 0.8.18;
+pragma solidity 0.8.17;
 
 // Openzeppelin libraries
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -23,7 +23,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20Metadata;
 
     // The address of the smart chef factory
-    address public immutable MASTER_SMART_CHEF_FACTORY;
+    address public immutable masterSmartChefFactory;
 
     // stakedToken
     IERC20Metadata public stakedToken;
@@ -33,7 +33,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     INFTStaking public nftstaking;
 
     // admin withdrawable
-    bool adminWithdrawable = true;
+    bool private adminWithdrawable = true;
 
     // Info of each user that stakes tokens (stakedToken)
     mapping(address => UserInfo) public userInfo;
@@ -54,7 +54,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     // admin
     address public admin;
     // The precision factor
-    uint256 public PRECISION_FACTOR;
+    uint256 public precisionFactor;
     // Whether it is initialized
     bool public isInitialized;
     // Accrued token per share
@@ -80,18 +80,18 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     // index => value
     mapping(uint256 => uint256) private boosters;
     // booster total number
-    uint256 public booster_total;
+    uint256 public boosterTotal;
     // Booster denominator
-    uint256 public DENOMINATOR = 10000;
+    uint256 public constant DENOMINATOR = 10000;
 
-    uint256 public MIN_LOCK_DURATION = 1 weeks;
-    uint256 public MAX_LOCK_DURATION = 1000 days;
+    uint256 public constant MIN_LOCK_DURATION = 1 weeks;
+    uint256 public constant MAX_LOCK_DURATION = 1000 days;
     uint256 public constant MIN_DEPOSIT_AMOUNT = 0.00001 ether;
 
     event NewPoolLimit(uint256 poolLimitPerUser);
 
     constructor() {
-        MASTER_SMART_CHEF_FACTORY = msg.sender;
+        masterSmartChefFactory = msg.sender;
     }
 
     /*
@@ -119,7 +119,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         address _nftstaking
     ) external {
         require(!isInitialized, "Already initialized");
-        require(msg.sender == MASTER_SMART_CHEF_FACTORY, "Not factory");
+        require(msg.sender == masterSmartChefFactory, "Not factory");
 
         // Make this contract initialized
         isInitialized = true;
@@ -139,7 +139,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         uint256 decimalsRewardToken = uint256(rewardToken.decimals());
         require(decimalsRewardToken < 30, "Must be less than 30");
 
-        PRECISION_FACTOR = uint256(10**(uint256(30) - decimalsRewardToken));
+        precisionFactor = uint256(10**(uint256(30) - decimalsRewardToken));
 
         // Set the lastRewardBlock as the startBlock
         lastRewardBlock = startBlock;
@@ -158,8 +158,8 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
      * @param amount: amount of second skin amount of user wallet
      */
     function getBoosterValue(uint256 amount) public view returns (uint256) {
-        if (amount > booster_total) {
-            return boosters[booster_total];
+        if (amount > boosterTotal) {
+            return boosters[boosterTotal];
         } else {
             return boosters[amount];
         }
@@ -180,11 +180,11 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     function setBoosterArray(uint256[] calldata _booster) external onlyOwner {
         for (uint256 i = 0; i < _booster.length; i++) {
             require(_booster[i] > 0, "Booster value should not be zero");
-            require(_booster[i] < 5000, "Booster value should not over 50%");
+            require(_booster[i] < 5000, "Booster rate: overflow 50%");
             if (i > 0) {
                 require(
                     _booster[i] >= _booster[i - 1],
-                    "Booster value should not be increased"
+                    "Booster value: invalid"
                 );
             }
         }
@@ -193,36 +193,36 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < _booster.length; i++) {
             boosters[i + 1] = _booster[i];
         }
-        booster_total = _booster.length;
+        boosterTotal = _booster.length;
     }
 
     /**
      * @dev set booster value on index
      */
     function setBoosterValue(uint256 idx, uint256 value) public onlyOwner {
-        require(idx <= booster_total + 1, "Out of index");
+        require(idx <= boosterTotal + 1, "Out of index");
         require(idx > 0, "Index should not be zero");
         require(value > 0, "Booster value should not be zero");
-        require(value < 5000, "Booster value should not be over than 50%");
+        require(value < 5000, "Booster rate: overflow 50%");
         require(boosters[idx] != value, "Amount in use");
         boosters[idx] = value;
-        if (idx == booster_total + 1) booster_total = booster_total.add(1);
+        if (idx == boosterTotal + 1) boosterTotal = boosterTotal.add(1);
 
-        if (idx > 1 && idx <= booster_total) {
+        if (idx > 1 && idx <= boosterTotal) {
             require(
                 boosters[idx] >= boosters[idx - 1],
-                "Booster value should be increased"
+                "Booster value: invalid"
             );
-            if (idx < booster_total) {
+            if (idx < boosterTotal) {
                 require(
                     boosters[idx + 1] >= boosters[idx],
-                    "Booster value should be increased"
+                    "Booster value: invalid"
                 );
             }
-        } else if (idx == 1 && booster_total > 1) {
+        } else if (idx == 1 && boosterTotal > 1) {
             require(
                 boosters[idx + 1] >= boosters[idx],
-                "Booster value should be increased"
+                "Booster value: invalid"
             );
         }
     }
@@ -286,10 +286,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
             currentLockedAmount = user.lockedAmount;
         } else {
             // when user deposit newly
-            require(
-                user.locked == false,
-                "Unlock previos locked staking first"
-            );
+            require(user.locked == false, "Unlock previous one");
 
             userLimit = hasUserLimit();
             require(
@@ -312,7 +309,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
 
         if (user.lockedAmount > 0) {
             uint256 pending = ((user.lockedAmount * accTokenPerShare) /
-                PRECISION_FACTOR).sub(user.rewardDebt);
+                precisionFactor).sub(user.rewardDebt);
             if (pending > 0) {
                 user.rewards = user.rewards.add(pending);
             }
@@ -329,13 +326,13 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
 
         user.rewardDebt =
             (user.lockedAmount * accTokenPerShare) /
-            PRECISION_FACTOR;
+            precisionFactor;
         user.lastUserActionTime = block.timestamp;
         user.lockEndTime = user.lockStartTime.add(_lockDuration);
         user.locked = true;
         user.boosterValue = getStakerBoosterValue(_user);
 
-        IMasterChef(MASTER_SMART_CHEF_FACTORY).emitStakedEventFromSubChef(
+        IMasterChef(masterSmartChefFactory).emitStakedEventFromSubChef(
             _user,
             _amount,
             user.lockStartTime,
@@ -368,7 +365,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         _updatePool();
 
         if (_amount > 0) {
-            uint256 pending = ((_amount * accTokenPerShare) / PRECISION_FACTOR)
+            uint256 pending = ((_amount * accTokenPerShare) / precisionFactor)
                 .sub(user.rewardDebt);
             if (pending > 0) {
                 user.rewards = user.rewards.add(pending);
@@ -397,7 +394,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
             rewardToken.safeTransfer(address(_user), rewardAmount);
         }
 
-        IMasterChef(MASTER_SMART_CHEF_FACTORY).emitUnstakedEventFromSubChef(
+        IMasterChef(masterSmartChefFactory).emitUnstakedEventFromSubChef(
             _user,
             user.lastUserActionTime,
             user.rewards,
@@ -418,7 +415,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         UserInfo memory user = userInfo[from];
         // Calculate total reward
         uint256 pending = ((user.lockedAmount * accTokenPerShare) /
-            PRECISION_FACTOR).sub(user.rewardDebt);
+            precisionFactor).sub(user.rewardDebt);
         return user.rewards.add(pending);
     }
 
@@ -441,7 +438,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
         uint256 tavaReward = multiplier * rewardPerBlock;
         accTokenPerShare =
             accTokenPerShare +
-            (tavaReward * PRECISION_FACTOR) /
+            (tavaReward * precisionFactor) /
             stakedTokenSupply;
         lastRewardBlock = block.number;
     }
@@ -480,9 +477,9 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
 
     modifier _hasAllowance(address allower, uint256 amount) {
         // Make sure the allower has provided the right allowance.
-        IERC20Metadata ERC20Interface = IERC20Metadata(stakedToken);
-        uint256 ourAllowance = ERC20Interface.allowance(allower, address(this));
-        require(amount <= ourAllowance, "Make sure to add enough allowance");
+        IERC20Metadata erc20Interface = IERC20Metadata(stakedToken);
+        uint256 ourAllowance = erc20Interface.allowance(allower, address(this));
+        require(amount <= ourAllowance, "Not enough allowance");
         _;
     }
 
