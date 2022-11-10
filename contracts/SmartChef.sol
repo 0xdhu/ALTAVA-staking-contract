@@ -1,6 +1,6 @@
 //SPDX-License-Identifier: UNLICENSED
 
-pragma solidity >=0.6.0 <0.9.0;
+pragma solidity 0.8.18;
 
 // Openzeppelin libraries
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -18,7 +18,7 @@ import "./interfaces/IMasterChef.sol";
 /**
  * @dev Stake TAVA with locked staking and distribute third-party token
  */
-contract SmartChef is Ownable, ReentrancyGuard, Pausable{
+contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20Metadata;
 
@@ -90,8 +90,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
 
     event NewPoolLimit(uint256 poolLimitPerUser);
 
-    constructor(
-    ) {
+    constructor() {
         MASTER_SMART_CHEF_FACTORY = msg.sender;
     }
 
@@ -149,18 +148,17 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         // nft staking
         nftstaking = INFTStaking(_nftstaking);
 
-
         // Transfer ownership to the admin address who becomes owner of the contract
         transferOwnership(_newOwner);
     }
 
     /**
      * @dev calculate booster percent based on NFT holds
-     * 
+     *
      * @param amount: amount of second skin amount of user wallet
      */
-    function getBoosterValue(uint256 amount) public view returns(uint256) {
-        if(amount > booster_total) {
+    function getBoosterValue(uint256 amount) public view returns (uint256) {
+        if (amount > booster_total) {
             return boosters[booster_total];
         } else {
             return boosters[amount];
@@ -170,25 +168,30 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     /**
      * @dev get booster percent of user wallet.
      */
-    function getStakerBoosterValue(address sender) public view returns(uint256) {
+    function getStakerBoosterValue(address sender)
+        public
+        view
+        returns (uint256)
+    {
         uint256 amount = nftstaking.getStakedNFTCount(sender);
         return getBoosterValue(amount);
     }
 
-    function setBoosterArray(
-        uint256[] calldata _booster        
-    ) external onlyOwner {
-        for(uint256 i=0; i < _booster.length; i++) {
+    function setBoosterArray(uint256[] calldata _booster) external onlyOwner {
+        for (uint256 i = 0; i < _booster.length; i++) {
             require(_booster[i] > 0, "Booster value should not be zero");
             require(_booster[i] < 5000, "Booster value should not over 50%");
-            if(i > 0) {
-                require(_booster[i] >= _booster[i-1], "Booster value should not be increased");
+            if (i > 0) {
+                require(
+                    _booster[i] >= _booster[i - 1],
+                    "Booster value should not be increased"
+                );
             }
         }
         // If didnot stake any amount of NFT, booster is just zero
         boosters[0] = 0;
-        for(uint256 i=0; i < _booster.length; i++) {
-            boosters[i+1] = _booster[i];
+        for (uint256 i = 0; i < _booster.length; i++) {
+            boosters[i + 1] = _booster[i];
         }
         booster_total = _booster.length;
     }
@@ -203,20 +206,29 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         require(value < 5000, "Booster value should not be over than 50%");
         require(boosters[idx] != value, "Amount in use");
         boosters[idx] = value;
-        if(idx == booster_total+1) booster_total = booster_total.add(1);
+        if (idx == booster_total + 1) booster_total = booster_total.add(1);
 
-        if(idx > 1 && idx <= booster_total) {
-            require(boosters[idx] >= boosters[idx-1], "Booster value should be increased");
-            if(idx < booster_total) {
-                require(boosters[idx+1] >= boosters[idx], "Booster value should be increased");
+        if (idx > 1 && idx <= booster_total) {
+            require(
+                boosters[idx] >= boosters[idx - 1],
+                "Booster value should be increased"
+            );
+            if (idx < booster_total) {
+                require(
+                    boosters[idx + 1] >= boosters[idx],
+                    "Booster value should be increased"
+                );
             }
-        } else if(idx == 1 && booster_total > 1) {
-            require(boosters[idx+1] >= boosters[idx], "Booster value should be increased");
+        } else if (idx == 1 && booster_total > 1) {
+            require(
+                boosters[idx + 1] >= boosters[idx],
+                "Booster value should be increased"
+            );
         }
     }
 
     // modifier to check admin
-    modifier onlyAdmin {
+    modifier onlyAdmin() {
         require(admin == msg.sender, "Invalid admin");
         _;
     }
@@ -225,7 +237,10 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      * @notice Checks if the msg.sender is either the cake owner address or the operator address.
      */
     modifier onlyOperatorOrStaker(address _user) {
-        require(msg.sender == _user || msg.sender == admin, "Not operator or staker");
+        require(
+            msg.sender == _user || msg.sender == admin,
+            "Not operator or staker"
+        );
         _;
     }
 
@@ -238,7 +253,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
     }
 
     /*
-     * @notice Stake TAVA token to get rewarded with third-party nft. 
+     * @notice Stake TAVA token to get rewarded with third-party nft.
      * @param _amount: amount to lock
      * @param _lockDuration: duration to lock
      */
@@ -254,31 +269,50 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         return (_stake(_amount, _lockDuration, msg.sender));
     }
 
-    function _stake(uint256 _amount, uint256 _lockDuration, address _user) internal returns (bool) {
+    function _stake(
+        uint256 _amount,
+        uint256 _lockDuration,
+        address _user
+    ) internal returns (bool) {
         UserInfo storage user = userInfo[_user];
         uint256 currentLockedAmount = _amount;
         // which means extend days
         if (user.lockEndTime >= block.timestamp) {
             require(_amount == 0, "Extend lock duration");
-            require(_lockDuration > user.lockEndTime - user.lockStartTime, "Not enough duration to extends");
+            require(
+                _lockDuration > user.lockEndTime - user.lockStartTime,
+                "Not enough duration to extends"
+            );
             currentLockedAmount = user.lockedAmount;
         } else {
             // when user deposit newly
-            require(user.locked == false,  "Unlock previos locked staking first");
-            
-            userLimit = hasUserLimit(); 
-            require(!userLimit || (currentLockedAmount <= poolLimitPerUser), "Stake: Amount above limit");
+            require(
+                user.locked == false,
+                "Unlock previos locked staking first"
+            );
+
+            userLimit = hasUserLimit();
+            require(
+                !userLimit || (currentLockedAmount <= poolLimitPerUser),
+                "Stake: Amount above limit"
+            );
             user.lockStartTime = block.timestamp;
         }
 
-        require(_lockDuration>= MIN_LOCK_DURATION, "Minimum lock period is one week");
-        require(_lockDuration <= MAX_LOCK_DURATION, "Maximum lock period exceeded");
-
+        require(
+            _lockDuration >= MIN_LOCK_DURATION,
+            "Minimum lock period is one week"
+        );
+        require(
+            _lockDuration <= MAX_LOCK_DURATION,
+            "Maximum lock period exceeded"
+        );
 
         _updatePool();
 
         if (user.lockedAmount > 0) {
-            uint256 pending = ((user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
+            uint256 pending = ((user.lockedAmount * accTokenPerShare) /
+                PRECISION_FACTOR).sub(user.rewardDebt);
             if (pending > 0) {
                 user.rewards = user.rewards.add(pending);
             }
@@ -286,18 +320,30 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
 
         if (_amount > 0) {
             user.lockedAmount = user.lockedAmount.add(_amount);
-            stakedToken.safeTransferFrom(address(_user), address(this), _amount);
+            stakedToken.safeTransferFrom(
+                address(_user),
+                address(this),
+                _amount
+            );
         }
 
-        user.rewardDebt = (user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR;
+        user.rewardDebt =
+            (user.lockedAmount * accTokenPerShare) /
+            PRECISION_FACTOR;
         user.lastUserActionTime = block.timestamp;
         user.lockEndTime = user.lockStartTime.add(_lockDuration);
         user.locked = true;
         user.boosterValue = getStakerBoosterValue(_user);
 
-
         IMasterChef(MASTER_SMART_CHEF_FACTORY).emitStakedEventFromSubChef(
-            _user, _amount, user.lockStartTime, user.lockEndTime, block.timestamp, user.rewards, user.rewardDebt, user.boosterValue
+            _user,
+            _amount,
+            user.lockStartTime,
+            user.lockEndTime,
+            block.timestamp,
+            user.rewards,
+            user.rewardDebt,
+            user.boosterValue
         );
         return true;
     }
@@ -306,7 +352,13 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      * @notice Unlock staked tokens (Unlock)
      * @dev user side withdraw manually
      */
-    function unlock(address _user) external _realAddress(_user) onlyOperatorOrStaker(_user) nonReentrant returns (bool) {
+    function unlock(address _user)
+        external
+        _realAddress(_user)
+        onlyOperatorOrStaker(_user)
+        nonReentrant
+        returns (bool)
+    {
         UserInfo storage user = userInfo[_user];
         uint256 _amount = user.lockedAmount;
         require(_amount > 0, "Empty to unlock");
@@ -316,7 +368,8 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         _updatePool();
 
         if (_amount > 0) {
-            uint256 pending = ((_amount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
+            uint256 pending = ((_amount * accTokenPerShare) / PRECISION_FACTOR)
+                .sub(user.rewardDebt);
             if (pending > 0) {
                 user.rewards = user.rewards.add(pending);
             }
@@ -335,17 +388,22 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         uint256 rewardAmount = user.rewards;
         // Here, should be check pool balance as well as if admin is able to harvest users reward to users.
         if (adminWithdrawable == false && rewardAmount > 0) {
-            require(rewardToken.balanceOf(address(this)) >= rewardAmount, "Insufficient pool");
+            require(
+                rewardToken.balanceOf(address(this)) >= rewardAmount,
+                "Insufficient pool"
+            );
             user.rewards = 0;
 
             rewardToken.safeTransfer(address(_user), rewardAmount);
         }
 
-
         IMasterChef(MASTER_SMART_CHEF_FACTORY).emitUnstakedEventFromSubChef(
-            _user, user.lastUserActionTime, user.rewards, user.boosterValue
+            _user,
+            user.lastUserActionTime,
+            user.rewards,
+            user.boosterValue
         );
-        
+
         return true;
     }
 
@@ -356,14 +414,11 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         return _calculate(from);
     }
 
-    function _calculate(address from)
-        private
-        view
-        returns (uint256)
-    {        
+    function _calculate(address from) private view returns (uint256) {
         UserInfo memory user = userInfo[from];
         // Calculate total reward
-        uint256 pending = ((user.lockedAmount * accTokenPerShare) / PRECISION_FACTOR).sub(user.rewardDebt);
+        uint256 pending = ((user.lockedAmount * accTokenPerShare) /
+            PRECISION_FACTOR).sub(user.rewardDebt);
         return user.rewards.add(pending);
     }
 
@@ -384,7 +439,10 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
 
         uint256 multiplier = _getMultiplier(lastRewardBlock, block.number);
         uint256 tavaReward = multiplier * rewardPerBlock;
-        accTokenPerShare = accTokenPerShare + (tavaReward * PRECISION_FACTOR) / stakedTokenSupply;
+        accTokenPerShare =
+            accTokenPerShare +
+            (tavaReward * PRECISION_FACTOR) /
+            stakedTokenSupply;
         lastRewardBlock = block.number;
     }
 
@@ -393,7 +451,11 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      * @param _from: block to start
      * @param _to: block to finish
      */
-    function _getMultiplier(uint256 _from, uint256 _to) internal view returns (uint256) {
+    function _getMultiplier(uint256 _from, uint256 _to)
+        internal
+        view
+        returns (uint256)
+    {
         if (_to <= bonusEndBlock) {
             return _to - _from;
         } else if (_from >= bonusEndBlock) {
@@ -402,7 +464,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
             return bonusEndBlock - _from;
         }
     }
-    
+
     /*
      * @notice Stop rewards
      * @dev Only callable by owner. Needs to be for emergency.
@@ -430,10 +492,16 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
      * @param _userLimit: whether the limit remains forced
      * @param _poolLimitPerUser: new pool limit per user
      */
-    function updatePoolLimitPerUser(bool _userLimit, uint256 _poolLimitPerUser) external onlyOwner {
+    function updatePoolLimitPerUser(bool _userLimit, uint256 _poolLimitPerUser)
+        external
+        onlyOwner
+    {
         require(userLimit, "Must be set");
         if (_userLimit) {
-            require(_poolLimitPerUser > poolLimitPerUser, "New limit must be higher");
+            require(
+                _poolLimitPerUser > poolLimitPerUser,
+                "New limit must be higher"
+            );
             poolLimitPerUser = _poolLimitPerUser;
         } else {
             userLimit = _userLimit;
@@ -441,11 +509,15 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable{
         }
         emit NewPoolLimit(poolLimitPerUser);
     }
+
     /*
      * @notice Return user limit is set or zero.
      */
     function hasUserLimit() public view returns (bool) {
-        if (!userLimit || (block.number >= (startBlock + numberBlocksForUserLimit))) {
+        if (
+            !userLimit ||
+            (block.number >= (startBlock + numberBlocksForUserLimit))
+        ) {
             return false;
         }
 

@@ -1,0 +1,8 @@
+/node_modules
+
+NFTFactory.sol
+SecondSkinNFT.sol
+TAVA.sol
+ThirdPartyNFT.sol
+ThirdPartyToken.sol
+TokenFactory.sol

@@ -1,5 +1,5 @@
 /** @type import('hardhat/config').HardhatUserConfig */
-require('dotenv').config()
+require("dotenv").config();
 require("@nomicfoundation/hardhat-toolbox");
 
 // Go to https://www.alchemyapi.io, sign up, create
@@ -21,26 +21,26 @@ const DEPLOYER_KEY = process.env.DEPLOYER_KEY;
 const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY;
 
 module.exports = {
-  solidity: "0.8.17",
+  solidity: "0.8.18",
   settings: { optimizer: { enabled: true, runs: 20 } },
   networks: {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-      accounts: [PRIVATE_KEY]
+      accounts: [PRIVATE_KEY],
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/`,
-      accounts: [PRIVATE_KEY]
+      accounts: [PRIVATE_KEY],
     },
     // Bsc testnet
     testnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
-      accounts: [DEPLOYER_KEY]
-    }
+      accounts: [DEPLOYER_KEY],
+    },
   },
   etherscan: {
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
-    apiKey: BSCSCAN_API_KEY
-  }
+    apiKey: BSCSCAN_API_KEY,
+  },
 };

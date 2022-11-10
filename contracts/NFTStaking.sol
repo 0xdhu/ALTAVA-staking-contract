@@ -1,11 +1,12 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.6.0 <0.9.0;
+pragma solidity 0.8.18;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC721.sol";
+
 /**
  * @dev SecondSKin NFT Staking
  */
-contract NFTStaking is Ownable{
+contract NFTStaking is Ownable {
     // 0x82f371b47cc5b9cf23af60a9a31a9e7a6bef8a2d
     IERC721 public secondskinNFT;
 
@@ -30,15 +31,13 @@ contract NFTStaking is Ownable{
     /**
      * Stake NFT
      */
-    function stake(
-        uint256[] calldata token_ids
-    ) external {
+    function stake(uint256[] calldata token_ids) external {
         update_info(msg.sender);
 
-        for(uint256 i=0; i < token_ids.length; i++) {
+        for (uint256 i = 0; i < token_ids.length; i++) {
             uint256 tokenId = token_ids[i];
             _stake(tokenId);
-        }        
+        }
     }
 
     /**
@@ -53,8 +52,8 @@ contract NFTStaking is Ownable{
 
         StakeInfo storage stakeInfo = stakedIds[_sender][current_index];
 
-        if(current_index < stakedAmount) {
-            if(stakeInfo.isStaked == false) {
+        if (current_index < stakedAmount) {
+            if (stakeInfo.isStaked == false) {
                 stakeInfo.isStaked = true;
                 emit NFTStaked(_sender, tokenId);
             }
@@ -91,10 +90,10 @@ contract NFTStaking is Ownable{
      */
     function update_info(address _sender) public {
         uint256 stakedAmount = stakingAmounts[_sender];
-        for(uint256 i=0; i < stakedAmount; i++) {
+        for (uint256 i = 0; i < stakedAmount; i++) {
             StakeInfo storage stakeInfo = stakedIds[_sender][i];
-            if(stakeInfo.isStaked) {
-                if(secondskinNFT.ownerOf(stakeInfo.tokenId) != _sender) {
+            if (stakeInfo.isStaked) {
+                if (secondskinNFT.ownerOf(stakeInfo.tokenId) != _sender) {
                     stakeInfo.isStaked = false;
                     emit NFTUnstaked(_sender, stakeInfo.tokenId);
                 }
@@ -105,22 +104,30 @@ contract NFTStaking is Ownable{
     /**
      * @dev return current staked index
      */
-    function get_staked_index(address _sender, uint256 _tokenId) private view returns(uint256) {
+    function get_staked_index(address _sender, uint256 _tokenId)
+        private
+        view
+        returns (uint256)
+    {
         uint256 stakedAmount = stakingAmounts[_sender];
-        for(uint256 i=0; i < stakedAmount; i++) {
+        for (uint256 i = 0; i < stakedAmount; i++) {
             uint256 tokenId = stakedIds[_sender][i].tokenId;
-            if(tokenId == _tokenId) {
+            if (tokenId == _tokenId) {
                 return i;
             }
         }
         return stakedAmount;
     }
 
-    function check_staked(address _sender, uint256 _tokenId) external view returns(bool) {
+    function check_staked(address _sender, uint256 _tokenId)
+        external
+        view
+        returns (bool)
+    {
         uint256 stakedAmount = stakingAmounts[_sender];
-        for(uint256 i=0; i < stakedAmount; i++) {
+        for (uint256 i = 0; i < stakedAmount; i++) {
             uint256 tokenId = stakedIds[_sender][i].tokenId;
-            if(tokenId == _tokenId) {
+            if (tokenId == _tokenId) {
                 return stakedIds[_sender][i].isStaked;
             }
         }
@@ -130,17 +137,21 @@ contract NFTStaking is Ownable{
     /**
      * @dev get staked info
      */
-    function getStakedTokenIds(address _sender) external view returns(uint256[] memory) {
+    function getStakedTokenIds(address _sender)
+        external
+        view
+        returns (uint256[] memory)
+    {
         uint256 stakedAmount = stakingAmounts[_sender];
         uint256 liveStakedAmount = getStakedNFTCount(_sender);
         uint256 tempCount = 0;
 
         uint256[] memory tokenIds = new uint256[](liveStakedAmount);
 
-        for(uint256 i=0; i < stakedAmount; i++) {
+        for (uint256 i = 0; i < stakedAmount; i++) {
             StakeInfo memory stakeInfo = stakedIds[_sender][i];
             bool isOwned = secondskinNFT.ownerOf(stakeInfo.tokenId) == _sender;
-            if(stakeInfo.isStaked && isOwned) {
+            if (stakeInfo.isStaked && isOwned) {
                 tokenIds[tempCount] = stakeInfo.tokenId;
                 tempCount++;
             }
@@ -151,13 +162,17 @@ contract NFTStaking is Ownable{
     /**
      * @dev get staked balance
      */
-    function getStakedNFTCount(address sender) public view returns(uint256 tempCount) {
+    function getStakedNFTCount(address sender)
+        public
+        view
+        returns (uint256 tempCount)
+    {
         uint256 stakedAmount = stakingAmounts[sender];
         tempCount = 0;
-        for(uint256 i=0; i < stakedAmount; i++) {
+        for (uint256 i = 0; i < stakedAmount; i++) {
             StakeInfo memory stakeInfo = stakedIds[sender][i];
             bool isOwned = secondskinNFT.ownerOf(stakeInfo.tokenId) == sender;
-            if(stakeInfo.isStaked && isOwned) {
+            if (stakeInfo.isStaked && isOwned) {
                 tempCount++;
             }
         }

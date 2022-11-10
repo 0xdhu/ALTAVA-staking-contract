@@ -1,15 +1,13 @@
 //SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.18;
 
-pragma solidity >=0.6.0 <0.9.0;
-
-// custom defined interface
 import "./SmartChef.sol";
 
 /**
  * @dev MasterChef educates various SmartChef and lunch them :)
  */
-contract MasterChef is Ownable{
-    using SafeMath for uint256;    
+contract MasterChef is Ownable {
+    using SafeMath for uint256;
 
     // Second Skin NFT Staking Contract
     address public nftstaking;
@@ -29,7 +27,7 @@ contract MasterChef is Ownable{
 
     event Stake(
         address chef,
-        address indexed sender, 
+        address indexed sender,
         uint256 lockedAmount,
         uint256 lockStartTime,
         uint256 lockEndTime,
@@ -40,15 +38,15 @@ contract MasterChef is Ownable{
     );
     event Unstaked(
         address chef,
-        address indexed sender, 
+        address indexed sender,
         uint256 lastUserActionTime,
         uint256 rewards,
-        uint256 boosterValue        
+        uint256 boosterValue
     );
-    
-    modifier onlySubChef {
+
+    modifier onlySubChef() {
         bool isSubChef = false;
-        for(uint256 i=0; i < total_count; i++) {
+        for (uint256 i = 0; i < total_count; i++) {
             if (chefAddress[i] == msg.sender) {
                 isSubChef = true;
             }
@@ -57,10 +55,11 @@ contract MasterChef is Ownable{
         _;
     }
 
-    constructor (
-        address _nftstaking
-    ) { 
-        require(_nftstaking != address(0x0), "Address should not be zero address");
+    constructor(address _nftstaking) {
+        require(
+            _nftstaking != address(0x0),
+            "Address should not be zero address"
+        );
         nftstaking = _nftstaking;
     }
 
@@ -68,10 +67,13 @@ contract MasterChef is Ownable{
      * set nftstaking contract address
      */
     function setNFTStaking(address _nftstaking) external onlyOwner {
-        require(_nftstaking != address(0x0), "Address should not be zero address");
+        require(
+            _nftstaking != address(0x0),
+            "Address should not be zero address"
+        );
         nftstaking = _nftstaking;
     }
-    
+
     /**
      * @dev deploy the new SmartChef
      */
@@ -79,7 +81,7 @@ contract MasterChef is Ownable{
         string memory _id,
         IERC20Metadata _stakedToken,
         IERC20Metadata _rewardToken,
-         uint256 _rewardPerBlock,
+        uint256 _rewardPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock,
         uint256 _poolLimitPerUser,
@@ -89,7 +91,6 @@ contract MasterChef is Ownable{
         require(_stakedToken.totalSupply() >= 0);
         require(_rewardToken.totalSupply() >= 0);
         require(_admin != address(0x0));
-
 
         bytes memory bytecode = type(SmartChef).creationCode;
         // pass constructor argument
@@ -102,7 +103,12 @@ contract MasterChef is Ownable{
         address smartChefAddress;
 
         assembly {
-            smartChefAddress := create2(0, add(bytecode, 32), mload(bytecode), salt)
+            smartChefAddress := create2(
+                0,
+                add(bytecode, 32),
+                mload(bytecode),
+                salt
+            )
         }
 
         SmartChef(smartChefAddress).initialize(
@@ -123,22 +129,28 @@ contract MasterChef is Ownable{
         total_count = total_count.add(1);
 
         // emit event
-        emit NewSmartChefContract(_id, smartChefAddress, address(_rewardToken), address(_stakedToken), _admin);
+        emit NewSmartChefContract(
+            _id,
+            smartChefAddress,
+            address(_rewardToken),
+            address(_stakedToken),
+            _admin
+        );
     }
+
     /**
      * get chef address with id
      */
-    function getChefAddress(uint256 id) external view returns(address) {
+    function getChefAddress(uint256 id) external view returns (address) {
         require(total_count > id, "Chef: not exist");
         return chefAddress[id];
     }
-
 
     /**
      * Emit event from sub chef: Staked
      */
     function emitStakedEventFromSubChef(
-        address sender, 
+        address sender,
         uint256 lockedAmount,
         uint256 lockStartTime,
         uint256 lockEndTime,
@@ -149,7 +161,7 @@ contract MasterChef is Ownable{
     ) external onlySubChef {
         emit Stake(
             msg.sender,
-            sender, 
+            sender,
             lockedAmount,
             lockStartTime,
             lockEndTime,
@@ -164,17 +176,17 @@ contract MasterChef is Ownable{
      * Emit event from sub chef: Unstaked
      */
     function emitUnstakedEventFromSubChef(
-        address sender, 
+        address sender,
         uint256 lastUserActionTime,
         uint256 rewards,
-        uint256 boosterValue  
+        uint256 boosterValue
     ) external onlySubChef {
         emit Unstaked(
             msg.sender,
-            sender, 
+            sender,
             lastUserActionTime,
             rewards,
-            boosterValue  
+            boosterValue
         );
     }
 }
