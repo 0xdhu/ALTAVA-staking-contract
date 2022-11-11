@@ -13,8 +13,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/INFTStaking.sol";
 import "./interfaces/IMasterChef.sol";
 
-// import "hardhat/console.sol";
-
 /**
  * @dev Stake TAVA with locked staking and distribute third-party token
  */

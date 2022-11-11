@@ -1,6 +1,8 @@
 /** @type import('hardhat/config').HardhatUserConfig */
 require("dotenv").config();
 require("@nomicfoundation/hardhat-toolbox");
+require("solidity-coverage");
+require("hardhat-gas-reporter");
 
 // Go to https://www.alchemyapi.io, sign up, create
 // a new App in its dashboard, and replace "KEY" with its key
@@ -43,4 +45,10 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: BSCSCAN_API_KEY,
   },
+  gasReporter: {
+    enabled: process.env.REPORT_GAS !== undefined,
+    currency: "USD",
+  },
+  // specify separate cache for hardhat, since it could possibly conflict with foundry's
+  paths: { cache: "hh-cache" },
 };
