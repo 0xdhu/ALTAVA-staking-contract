@@ -1,56 +1,56 @@
 # ALTAVA-staking-contract
 
-Altava staking protocol is to distribute third-party ERC20 reward tokens to TAVA token stakers.
-TAVA token holders can participate in staking and can get benefit by receiving third-party tokens and third-party NFT tokens.
-Altava staking is locked staking and users cannot unlock staked tokens before the unlock date.
+Altava staking protocol is to distribute third-party ERC20 reward tokens to TAVA token stakers. <br />
+TAVA token holders can participate in staking and can get benefit by receiving third-party tokens and third-party NFT tokens. <br />
+Altava staking is locked staking and users cannot unlock staked tokens before the unlock date. <br />
 Some reward tokens would be claimed directly by the user and some reward tokens would be airdropped by admin when the locking period ends, because reward token might comes from other chains.
 
 ## Install
 
-Make sure you have already set up and installed `npm` and `yarn`.
-Download project on local, and run `yarn install`
+Make sure you have already set up and installed <br /> `npm` and `yarn`.
+Download project on local, and run <br /> `yarn install`
 
 ### Compile
 
 Before compile project, you need to add two \*.sol files. They are ERC20 token and ERC721 token contract files, which would be your tokens.
 Please named them "TAVA.sol" and "SecondskinNFT.sol".
-To compile smart contract codes on local, run following command line.
+To compile smart contract codes on local, run following command line. <br />
 `yarn compile` or `yarn build`
 
 ### Coverage
 
-To get solidity coverage with unit tests, please run following command line.
+To get solidity coverage with unit tests, please run following command line. <br />
 `yarn coverage`
 
 ### GasUsed
 
-To get gas used overview, please run following command line.
+To get gas used overview, please run following command line. <br />
 `yarn profile`
 
 ### Unit tests
 
-To run unit testing, please run following command line
+To run unit testing, please run following command line <br />
 `yarn test`
 
 ## Deploy
 
 ### Env
 
-First create .env file by copying .env.example.
-`DEPLOYER_KEY` is your wallet private key.
-You can get `ALCHEMY_API_KEY` from [here](https://www.alchemy.com/).
-`ETHERSCAN_API_KEY` This would be used for verifying contract on etherscan.
-`CMC_API_KEY` This would be used for `gasUsed`.
+First create .env file by copying .env.example. <br />
+`DEPLOYER_KEY` is your wallet private key. <br />
+You can get `ALCHEMY_API_KEY` from [here](https://www.alchemy.com/). <br />
+`ETHERSCAN_API_KEY` This would be used for verifying contract on etherscan. <br />
+`CMC_API_KEY` This would be used for `gasUsed`. <br />
 
 ### Deploy (testnet)
 
-You can deploy your contract on any testnet as you want.
-`yarn deploy:<NETWORK_NAME>`
-You can find `<NETWORK_NAME>` in hardhat.config.js file.
+You can deploy your contract on any testnet as you want.<br />
+`yarn deploy:<NETWORK_NAME>`<br />
+You can find `<NETWORK_NAME>` in hardhat.config.js file.<br />
 
 ### Deploy (mainnet)
 
-You can deploy your contract on any testnet as you want.
+You can deploy your contract on any testnet as you want.<br />
 `yarn deploy:mainnet`
 
 ## Testnet (bsc testnet) Nov 24th
