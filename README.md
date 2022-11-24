@@ -65,19 +65,19 @@ You can deploy your contract on any testnet as you want.
 
 ### BoosterController Contract
 
-[`0xEDfC8C081fbA2500397A6522E066F332c0eB6C02`](https://testnet.bscscan.com/address/0xEDfC8C081fbA2500397A6522E066F332c0eB6C02)
+[`0xCe91708D3749F9d544166dEFaBC0638F2Ad06182`](https://testnet.bscscan.com/address/0xCe91708D3749F9d544166dEFaBC0638F2Ad06182)
 
 ### NFTStaking Contract
 
-[`0xaA34DdC70Af714B030C7565dBD11F5874385B8E6`](https://testnet.bscscan.com/address/0xaA34DdC70Af714B030C7565dBD11F5874385B8E6)
+[`0x4F97ec81bdB27FcEA53614161EC29715c8FB15cb`](https://testnet.bscscan.com/address/0x4F97ec81bdB27FcEA53614161EC29715c8FB15cb)
 
 ### NFTMasterChef
 
-[`0x17fDB389942e12956B527596b3E7b70c485960Bd`](https://testnet.bscscan.com/address/0x17fDB389942e12956B527596b3E7b70c485960Bd)
+[`0xCA052C2c5CA7cF81C5D47CA6F1dCD5803D491365`](https://testnet.bscscan.com/address/0xCA052C2c5CA7cF81C5D47CA6F1dCD5803D491365)
 
 ### MasterChef
 
-[`0x0eFD10E89b1D64c206674cF666fcE1B967e9D779`](https://testnet.bscscan.com/address/0x0eFD10E89b1D64c206674cF666fcE1B967e9D779)
+[`0xbFF85397C9A0d1eA4Daa6DD6CcD2b4c59A009842`](https://testnet.bscscan.com/address/0xbFF85397C9A0d1eA4Daa6DD6CcD2b4c59A009842)
 
 ### Token Generate Factory
 

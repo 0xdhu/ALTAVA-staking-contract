@@ -38,3 +38,5 @@ TokenFactory.sol
 
 #Local deploy
 deploy_local.js
+
+yarn-error.log

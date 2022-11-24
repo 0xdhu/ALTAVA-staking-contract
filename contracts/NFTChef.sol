@@ -91,16 +91,14 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /// @param nftchef: nftchef contract address
     /// @param sender: staker/user wallet address
     /// @param stakeIndex: staking index
-    /// @param withdrawAmount: claimed amount
-    /// @param withdrawAt: unlock at
+    /// @param rewardAmount: claimed amount
     /// @param nftBalance: registered secondskin NFT balance
     /// @param airdropWalletAddress: airdrop wallet address
     event Unstaked(
         address indexed nftchef,
         address indexed sender,
         uint256 stakeIndex,
-        uint256 withdrawAmount,
-        uint256 withdrawAt,
+        uint256 rewardAmount,
         uint256 nftBalance,
         string airdropWalletAddress
     );
@@ -346,11 +344,15 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
      * so users cannot claim reward directly
      * To get reward NFT, they need to provide airdrop address
      */
-    function unstake(string memory airdropWalletAddress) external nonReentrant {
+    function unstake(string memory airdropWalletAddress, bool giveUp)
+        external
+        nonReentrant
+    {
         bytes memory stringBytes = bytes(airdropWalletAddress); // Uses memory
         require(stringBytes.length > 0, "Cannot be zero address");
 
         address _sender = msg.sender;
+        uint256 curTs = block.timestamp;
 
         // Get user staking index
         uint256 idx = _userStakeIndex[_sender];
@@ -358,59 +360,63 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
         StakerInfo storage _userInfo = _stakerInfos[_sender][idx];
 
         require(_userInfo.lockedAmount > 0, "Your position not exist");
-        require(_userInfo.unlockAt < block.timestamp, "Not able to withdraw");
+        require(_userInfo.unlockAt < curTs, "Not able to withdraw");
+        require(!_userInfo.unstaked, "Already unstaked");
+        // Set flag unstaked
+        _userInfo.unstaked = true;
 
         // Neet to get required amount basis current secondskin NFT amount.
         ChefConfig memory _chefConfig = chefConfig[_userInfo.lockDuration];
-        uint256 requiredAmount = _chefConfig.requiredLockAmount;
+        uint256 rewardAmount = _chefConfig.rewardNFTAmount;
+        if (giveUp) rewardAmount = 0;
+
         // Balance of NFT
         uint256 nftBalance = nftstaking.getNFTChefBoostCount(
             _sender,
             address(this)
         );
         require(nftstaking.unstakeFromNFTChef(_sender), "Unstake failed");
+        // use this to avoid stack too deep
+        {
+            uint256 requiredAmount = _chefConfig.requiredLockAmount;
+            // Check pool balance
+            uint curLockedAmount = _userInfo.lockedAmount;
 
-        // Check pool balance
-        uint curLockedAmount = _userInfo.lockedAmount;
+            if (nftBalance < _userInfo.lockedNFTAmount && !giveUp) {
+                // get booster percent
+                uint256 boosterValue = getBoosterValue(nftBalance);
+                uint256 _decreaseAmount = (requiredAmount * boosterValue) /
+                    DENOMINATOR;
+                uint256 _requiredAmount = requiredAmount - _decreaseAmount;
 
-        if (nftBalance < _userInfo.lockedNFTAmount) {
-            // get booster percent
-            uint256 boosterValue = getBoosterValue(nftBalance);
-            uint256 _decreaseAmount = (requiredAmount * boosterValue) /
-                DENOMINATOR;
-            uint256 _requiredAmount = requiredAmount - _decreaseAmount;
-
-            // If require amount is bigger than current locked amount,
-            // which means user transferred NFT that was used as booster
-            if (_requiredAmount > curLockedAmount) {
-                uint256 _panaltyAmount = _requiredAmount - curLockedAmount;
-                require(
-                    stakedToken.balanceOf(_sender) >= _panaltyAmount,
-                    "Not enough for panalty"
-                );
+                // If require amount is bigger than current locked amount,
+                // which means user transferred NFT that was used as booster
+                if (_requiredAmount > curLockedAmount) {
+                    uint256 _panaltyAmount = _requiredAmount - curLockedAmount;
+                    require(
+                        stakedToken.balanceOf(_sender) >= _panaltyAmount,
+                        "Not enough for panalty"
+                    );
+                }
             }
+
+            require(
+                stakedToken.balanceOf(address(this)) >= curLockedAmount,
+                "Token: Insufficient pool"
+            );
+
+            // increase index
+            _userStakeIndex[_sender] = idx + 1;
+
+            // safeTransfer from pool to user
+            stakedToken.safeTransfer(_sender, curLockedAmount);
         }
-
-        require(
-            stakedToken.balanceOf(address(this)) >= curLockedAmount,
-            "Token: Insufficient pool"
-        );
-        require(!_userInfo.unstaked, "Already unstaked");
-        // Set flag unstaked
-        _userInfo.unstaked = true;
-
-        // increase index
-        _userStakeIndex[_sender] = idx + 1;
-
-        // safeTransfer from pool to user
-        stakedToken.safeTransfer(_sender, curLockedAmount);
 
         emit Unstaked(
             address(this),
             _sender,
             idx,
-            curLockedAmount,
-            block.timestamp,
+            rewardAmount,
             nftBalance,
             airdropWalletAddress
         );

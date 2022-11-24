@@ -30,7 +30,7 @@ contract NFTStaking is Ownable, INFTStaking {
 
     /// @notice Maximum register able NFT amount
     /// @dev This is used to avoid block gas limit
-    uint256 public constant MAX_REGISTER_LIMIT = 10;
+    uint256 public constant MAX_REGISTER_LIMIT = 12;
     /// @dev Use this instead of -1.
     /// This would be used for unknow index
     uint256 public constant MINUS_ONE = 999;

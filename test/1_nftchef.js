@@ -573,9 +573,9 @@ describe("Third-Party NFT Chef", function () {
       // stake 30days
       await NFTChefContract.stake(getSecondsFromDays(3));
 
-      await expect(NFTChefContract.unstake("Address")).to.be.revertedWith(
-        "Not able to withdraw"
-      );
+      await expect(
+        NFTChefContract.unstake("Address", false)
+      ).to.be.revertedWith("Not able to withdraw");
     });
 
     it("Unstake should work after unlocked", async function () {
@@ -603,10 +603,14 @@ describe("Third-Party NFT Chef", function () {
       // Wait 4 seconds for unlocking.
       await ethers.provider.send("evm_increaseTime", [getSecondsFromDays(4)]);
 
-      await expect(NFTChefContract.unstake("")).to.be.revertedWith(cannot_zero);
+      await expect(NFTChefContract.unstake("", false)).to.be.revertedWith(
+        cannot_zero
+      );
 
       // Unstake and check balance changes
-      await expect(NFTChefContract.unstake("Address")).to.changeTokenBalances(
+      await expect(
+        NFTChefContract.unstake("Address", false)
+      ).to.changeTokenBalances(
         TAVAContract,
         [NFTChefContract.address, owner.address],
         [
@@ -631,7 +635,7 @@ describe("Third-Party NFT Chef", function () {
       expect(curStakerInfo.rewardAmount).to.be.equal(1);
       expect(curStakerInfo.unstaked).to.be.equal(true);
 
-      await expect(NFTChefContract.unstake("Address")).to.be.revertedWith(
+      await expect(NFTChefContract.unstake("Address", true)).to.be.revertedWith(
         "Your position not exist"
       );
 
@@ -695,7 +699,9 @@ describe("Third-Party NFT Chef", function () {
       // Wait 4 days for unlocking.
       await ethers.provider.send("evm_increaseTime", [getSecondsFromDays(4)]);
       // Unstake and check balance changes
-      await expect(NFTChefContract.unstake("Address")).to.changeTokenBalances(
+      await expect(
+        NFTChefContract.unstake("Address", false)
+      ).to.changeTokenBalances(
         TAVAContract,
         [NFTChefContract.address, owner.address],
         [requireAmount.mul(-1), requireAmount]
@@ -761,7 +767,9 @@ describe("Third-Party NFT Chef", function () {
       // Wait 4 days for unlocking.
       await ethers.provider.send("evm_increaseTime", [getSecondsFromDays(4)]);
       // Unstake and check balance changes
-      await expect(NFTChefContract.unstake("Address")).to.changeTokenBalances(
+      await expect(
+        NFTChefContract.unstake("Address", false)
+      ).to.changeTokenBalances(
         TAVAContract,
         [NFTChefContract.address, owner.address],
         [requireAmount.mul(-1), requireAmount]
@@ -841,7 +849,9 @@ describe("Third-Party NFT Chef", function () {
       // Wait 7 days for unlocking.
       await ethers.provider.send("evm_increaseTime", [getSecondsFromDays(7)]);
       // Unstake and check balance changes
-      await expect(NFTChefContract.unstake("Address")).to.changeTokenBalances(
+      await expect(
+        NFTChefContract.unstake("Address", false)
+      ).to.changeTokenBalances(
         TAVAContract,
         [NFTChefContract.address, owner.address],
         [requireAmount2.mul(-1), requireAmount2]
@@ -920,7 +930,7 @@ describe("Third-Party NFT Chef", function () {
       await ethers.provider.send("evm_increaseTime", [getSecondsFromDays(4)]);
       // Unstake and check balance changes
       await expect(
-        NFTChefContract.connect(addr1).unstake("Address")
+        NFTChefContract.connect(addr1).unstake("Address", false)
       ).to.changeTokenBalances(
         TAVAContract,
         [NFTChefContract.address, addr1.address, owner.address],

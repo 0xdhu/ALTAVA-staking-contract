@@ -121,7 +121,7 @@ describe("Secondskin NFT Staking for booster", function () {
       // This test expects the owner variable stored in the contract to be
       // equal to our Signer's owner.
       expect(await NFTStakingContract.owner()).to.equal(owner.address);
-      expect(await NFTStakingContract.MAX_REGISTER_LIMIT()).to.equal(10);
+      expect(await NFTStakingContract.MAX_REGISTER_LIMIT()).to.equal(12);
       expect(await NFTStakingContract.MINUS_ONE()).to.equal(999);
       expect(await NFTStakingContract.secondskinNFT()).to.equal(
         SecondSkinNFTContract.address
@@ -297,7 +297,9 @@ describe("Secondskin NFT Staking for booster", function () {
       }
 
       await expect(
-        NFTStakingContract.stake([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+        NFTStakingContract.stake([
+          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+        ])
       ).to.be.revertedWith("Overflow max registration limit");
     });
 
