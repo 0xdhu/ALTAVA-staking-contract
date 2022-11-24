@@ -1,39 +1,27 @@
 async function main() {
+  const secondskinNFT = "0x03222f6Ee842c079b3d88e7abDb362193FC5BE26";
+  const TAVA = "0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D";
   const [deployer] = await ethers.getSigners();
   console.log("Deployer: ", deployer.address);
-  
-  // Deploy TAVA Token contract
-  const TAVA = await ethers.getContractFactory("TAVA");
-  const TAVAContract = await TAVA.deploy();
-  await TAVAContract.deployed();
-  console.log("TAVAContract: ", TAVAContract.address);
 
-  // Deploy SecondskinNFT contract
-  const SecondSkinNFT = await ethers.getContractFactory("SecondSkinNFT");
-  const SecondSkinNFTContract = await SecondSkinNFT.deploy(
-    deployer.address
+  // Deploy Booster Token contract
+  const BoosterController = await ethers.getContractFactory(
+    "BoosterController"
   );
-  await SecondSkinNFTContract.deployed();
-  console.log("SecondSkinNFT: ", SecondSkinNFTContract.address);
+  const BoosterControllerContract = await BoosterController.deploy();
+  await BoosterControllerContract.deployed();
+  console.log("BoosterController: ", BoosterControllerContract.address);
 
   // Deploy NFT Staking Contract
   const NFTStaking = await ethers.getContractFactory("NFTStaking");
-  const NFTStakingContract = await NFTStaking.deploy(
-    SecondSkinNFTContract.address
-  );
+  const NFTStakingContract = await NFTStaking.deploy(secondskinNFT);
   await NFTStakingContract.deployed();
   console.log("NFTStaking: ", NFTStakingContract.address);
-
-  // Deploy ThirdParty NFT Generator contract
-  const NFTFactory = await ethers.getContractFactory("NFTFactory");
-  const NFTFactoryContract = await NFTFactory.deploy();
-  await NFTFactoryContract.deployed();
-  console.log("NFTFactory: ", NFTFactoryContract.address);
 
   // Deploy NFTMasterChef contract
   const NFTMasterChef = await ethers.getContractFactory("NFTMasterChef");
   const NFTMasterChefContract = await NFTMasterChef.deploy(
-    TAVAContract.address,
+    TAVA,
     NFTStakingContract.address
   );
   await NFTMasterChefContract.deployed();
@@ -42,11 +30,13 @@ async function main() {
   // Deploy MasterChef contract
   const MasterChef = await ethers.getContractFactory("MasterChef");
   const MasterChefContract = await MasterChef.deploy(
-    TAVAContract.address,
-    StakingContract.address
+    NFTStakingContract.address
   );
   await MasterChefContract.deployed();
   console.log("MasterChef: ", MasterChefContract.address);
+
+  await NFTStakingContract.setMasterChef(MasterChefContract.address);
+  await NFTStakingContract.setNFTMasterChef(NFTMasterChefContract.address);
 }
 
 main()

@@ -4,13 +4,12 @@ pragma solidity 0.8.17;
 
 // custom defined interface
 import "./NFTChef.sol";
+import "./interfaces/INFTMasterChef.sol";
 
 /**
  * @dev NFT MasterChef educates various NFTChef and lunch them :)
  */
-contract NFTMasterChef is Ownable {
-    using SafeMath for uint256;
-
+contract NFTMasterChef is Ownable, INFTMasterChef {
     // Second Skin NFT Staking Contract
     address public nftstaking;
     // ALTAVA TOKEN (TAVA)
@@ -19,88 +18,64 @@ contract NFTMasterChef is Ownable {
     // deployed chef total count
     uint256 public totalCount;
     // id => deployed chef address
-    mapping(uint256 => address) private chefAddress;
+    mapping(uint256 => address) private _chefAddress;
+    // check index of nftchef
+    mapping(address => uint256) private _subChefs;
 
     // Deployed new chef Event
     event NewNFTChefContract(
         string id,
         address indexed chef,
-        address indexed rewardNFT
+        string indexed rewardNFT
     );
 
-    // Staked Event
-    event Staked(
-        address indexed chef,
-        address indexed sender,
-        uint256 stakeIndex,
-        uint256 stakedAmount,
-        uint256 lockedAt,
-        uint256 lockDuration,
-        uint256 unlockAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    );
-
-    // Unstake Event
-    event Unstake(
-        address indexed chef,
-        address indexed sender,
-        uint256 stakeIndex,
-        uint256 withdrawAmount,
-        uint256 withdrawAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    );
-
-    // Event whenever updates the "Required Lock Amount"
-    event AddedRequiredLockAmount(
-        address indexed chef,
-        address indexed sender,
-        uint256 period,
-        uint requiredAmount,
-        uint rewardnftAmount,
-        bool isLive
-    );
-
-    modifier onlySubChef() {
-        bool isSubChef = false;
-        for (uint256 i = 0; i < totalCount; i++) {
-            if (chefAddress[i] == msg.sender) {
-                isSubChef = true;
-            }
-        }
-        require(isSubChef, "Role: not sub chef");
+    /// @notice Check if target address is zero address
+    modifier _realAddress(address addr) {
+        require(addr != address(0), "Cannot be zero address");
         _;
     }
 
-    constructor(address _stakedToken, address _nftstaking) {
-        require(_nftstaking != address(0x0), "Cannot be zero address");
+    /// @dev Constructore
+    /// @param _stakedToken: stake token address (TAVA)
+    /// @param _nftstaking: NFTStaking contract address
+    constructor(address _stakedToken, address _nftstaking)
+        _realAddress(_stakedToken)
+        _realAddress(_nftstaking)
+    {
         require(IERC20(_stakedToken).totalSupply() >= 0, "Invalid token");
         nftstaking = _nftstaking;
         stakedToken = _stakedToken;
     }
 
     /**
-     * set nftstaking contract address
+     * @notice set/update NFTStaking contract
+     * @param _nftstaking: NFTStaking contract address
      */
-    function setNFTStaking(address _nftstaking) external onlyOwner {
-        require(_nftstaking != address(0x0), "Cannot be zero address");
+    function setNFTStaking(address _nftstaking)
+        external
+        _realAddress(_nftstaking)
+        onlyOwner
+    {
         nftstaking = _nftstaking;
     }
 
     /**
-     * @dev deploy the new NFTChef
-     *
+     * @dev deploy the new NFTChef contract
      * @param _id `NFTChefs` table unique objectId
+     * Data ID from off-chain database to just identify
+     * @param _rewardNFT: reward token address
+     * Here, reward NFT is airdropped from various chains
+     * so use string but not address
      */
     function deploy(
         string memory _id,
-        address _rewardNFT,
+        string memory _rewardNFT,
         uint256[] calldata _booster
     ) external onlyOwner {
-        require(_rewardNFT != address(0x0), "Cannot be zero address");
+        bytes memory rewardNFTStringBytes = bytes(_rewardNFT); // Uses memory
+
+        require(rewardNFTStringBytes.length > 0, "Cannot be zero address");
         for (uint256 i = 0; i < _booster.length; i++) {
-            require(_booster[i] > 0, "Booster value should not be zero");
             require(_booster[i] < 5000, "Booster rate: overflow 50%");
             if (i > 0) {
                 require(
@@ -137,86 +112,42 @@ contract NFTMasterChef is Ownable {
         );
 
         // register address
-        chefAddress[totalCount] = nftChefAddress;
-        totalCount = totalCount.add(1);
+        totalCount = totalCount + 1;
+        _chefAddress[totalCount] = nftChefAddress;
+        _subChefs[nftChefAddress] = totalCount;
 
         // emit event
         emit NewNFTChefContract(_id, nftChefAddress, _rewardNFT);
     }
 
     /**
-     * get chef address with id
+     * @notice get chef address with index
      */
-    function getChefAddress(uint256 id) external view returns (address) {
-        require(totalCount > id, "Chef: not exist");
-        return chefAddress[id];
+    function getChefAddress(uint256 id)
+        external
+        view
+        override
+        returns (address)
+    {
+        require(totalCount >= id && id > 0, "Chef: not exist");
+        return _chefAddress[id];
     }
 
     /**
-     * Emit event from sub chef: Staked
+     * @notice get all smartchef contract's address
      */
-    function emitStakedEventFromSubChef(
-        address sender,
-        uint256 stakeIndex,
-        uint256 stakedAmount,
-        uint256 lockedAt,
-        uint256 lockDuration,
-        uint256 unlockAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    ) external onlySubChef {
-        emit Staked(
-            msg.sender,
-            sender,
-            stakeIndex,
-            stakedAmount,
-            lockedAt,
-            lockDuration,
-            unlockAt,
-            nftBalance,
-            boosterPercent
-        );
-    }
+    function getAllChefAddress()
+        external
+        view
+        override
+        returns (address[] memory)
+    {
+        address[] memory subchefAddress = new address[](totalCount);
 
-    /**
-     * Emit event from sub chef: Unstaked
-     */
-    function emitUnstakedEventFromSubChef(
-        address sender,
-        uint256 stakeIndex,
-        uint256 withdrawAmount,
-        uint256 withdrawAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    ) external onlySubChef {
-        emit Unstake(
-            msg.sender,
-            sender,
-            stakeIndex,
-            withdrawAmount,
-            withdrawAt,
-            nftBalance,
-            boosterPercent
-        );
-    }
-
-    /**
-     * Emit event from sub chef: AddedRequiredLockAmount
-     */
-    function emitAddedRequiredLockAmountEventFromSubChef(
-        address sender,
-        uint256 period,
-        uint requiredAmount,
-        uint rewardnftAmount,
-        bool isLive
-    ) external onlySubChef {
-        emit AddedRequiredLockAmount(
-            msg.sender,
-            sender,
-            period,
-            requiredAmount,
-            rewardnftAmount,
-            isLive
-        );
+        // Index starts from 1 but not 0
+        for (uint256 i = 1; i <= totalCount; i++) {
+            subchefAddress[i - 1] = _chefAddress[i];
+        }
+        return subchefAddress;
     }
 }

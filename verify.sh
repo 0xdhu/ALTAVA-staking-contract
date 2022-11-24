@@ -1,14 +1,12 @@
-# TAVA Token
-npx hardhat verify --contract contracts/TAVA.sol:TAVA --network testnet 0xe31Ae48ecfA298b94a98f0e3D7D8138675Ed647B
-
-# SecondSkinNFT
-npx hardhat verify --network testnet 0xc4f9BBb0Dd14224491b6F9bB0717afbAe9297291 "0x74BF843856effC69aeB637f5d8d28da86D6f0a53"
 
 # NFTStaking
-npx hardhat verify --network testnet 0x3A3a142Ab13445bD2ba11ea8009d0099828E7Fb1 "0xc4f9BBb0Dd14224491b6F9bB0717afbAe9297291"
+npx hardhat verify --contract contracts/NFTStaking.sol:NFTStaking --network testnet 0xaA34DdC70Af714B030C7565dBD11F5874385B8E6 "0x03222f6Ee842c079b3d88e7abDb362193FC5BE26"
 
-# NFTFactory
-npx hardhat verify --network testnet 0xd00362DDB2940AA4e4819934CdBe2fbd914b920b
+# BoosterController
+npx hardhat verify --contract contracts/BoosterController.sol:BoosterController --network testnet 0xEDfC8C081fbA2500397A6522E066F332c0eB6C02
 
-# NFTMasterChef ()
-npx hardhat verify --network testnet 0x6F31B3D54D9c8dCcf0e02A4B734cC55c671AFa7A "0xe31Ae48ecfA298b94a98f0e3D7D8138675Ed647B" "0x3A3a142Ab13445bD2ba11ea8009d0099828E7Fb1"
+# MasterChef (locked staking)
+npx hardhat verify --contract contracts/MasterChef.sol:MasterChef --network testnet 0x0eFD10E89b1D64c206674cF666fcE1B967e9D779 "0xaA34DdC70Af714B030C7565dBD11F5874385B8E6"
+
+# NFTMasterChef (tava, locked staking)
+npx hardhat verify --contract contracts/NFTMasterChef.sol:NFTMasterChef --network testnet 0x17fDB389942e12956B527596b3E7b70c485960Bd "0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D" "0xaA34DdC70Af714B030C7565dBD11F5874385B8E6"

@@ -3,26 +3,7 @@ pragma solidity 0.8.17;
 
 interface IMasterChef {
     /**
-     * Emit event from sub chef: Staked
+     * @notice get all smartchef contract's address deployed by MasterChef
      */
-    function emitStakedEventFromSubChef(
-        address sender,
-        uint256 lockedAmount,
-        uint256 lockStartTime,
-        uint256 lockEndTime,
-        uint256 lastUserActionTime,
-        uint256 rewards,
-        uint256 rewardDebt,
-        uint256 boosterValue
-    ) external;
-
-    /**
-     * Emit event from sub chef: Unstaked
-     */
-    function emitUnstakedEventFromSubChef(
-        address sender,
-        uint256 lastUserActionTime,
-        uint256 rewards,
-        uint256 boosterValue
-    ) external;
+    function getAllChefAddress() external view returns (address[] memory);
 }

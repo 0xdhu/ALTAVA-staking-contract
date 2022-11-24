@@ -4,39 +4,14 @@ pragma solidity 0.8.17;
 
 interface INFTMasterChef {
     /**
-     * Emit event from sub chef: Staked
+     * @notice get chef address with id
+     * @dev index starts from 1 but not zero
+     * @param id: index
      */
-    function emitStakedEventFromSubChef(
-        address sender,
-        uint256 stakeIndex,
-        uint256 stakedAmount,
-        uint256 lockedAt,
-        uint256 lockDuration,
-        uint256 unlockAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    ) external;
+    function getChefAddress(uint256 id) external view returns (address);
 
     /**
-     * Emit event from sub chef: Unstaked
+     * @notice get all smartchef contract's address
      */
-    function emitUnstakedEventFromSubChef(
-        address sender,
-        uint256 stakeIndex,
-        uint256 withdrawAmount,
-        uint256 withdrawAt,
-        uint256 nftBalance,
-        uint256 boosterPercent
-    ) external;
-
-    /**
-     * Emit event from sub chef: AddedRequiredLockAmount
-     */
-    function emitAddedRequiredLockAmountEventFromSubChef(
-        address sender,
-        uint256 period,
-        uint requiredAmount,
-        uint rewardnftAmount,
-        bool isLive
-    ) external;
+    function getAllChefAddress() external view returns (address[] memory);
 }

@@ -4,7 +4,7 @@
 .cache
 .DS_Store
 
-coverage
+# coverage
 coverage.json
 typechain-types
 yarn-error.log
@@ -35,3 +35,6 @@ TAVA.sol
 ThirdPartyNFT.sol
 ThirdPartyToken.sol
 TokenFactory.sol
+
+#Local deploy
+deploy_local.js

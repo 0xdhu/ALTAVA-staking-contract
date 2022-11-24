@@ -6,6 +6,10 @@ module.exports = {
     "ThirdPartyNFT.sol",
     "ThirdPartyToken.sol",
     "TokenFactory.sol",
+    "interfaces/IMasterChef.sol",
+    "interfaces/INFTMasterChef.sol",
+    "interfaces/INFTStaking.sol",
+    "interfaces/IBoosterController.sol",
   ],
   configureYulOptimizer: true,
   solcOptimizerDetails: {

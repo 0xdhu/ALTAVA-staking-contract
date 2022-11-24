@@ -8,12 +8,6 @@ require("hardhat-gas-reporter");
 // a new App in its dashboard, and replace "KEY" with its key
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 
-// Replace this private key with your Goerli account private key
-// To export your private key from Metamask, open Metamask and
-// go to Account Details > Export Private Key
-// Beware: NEVER put real Ether into testing accounts
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
-
 // Verify contract
 // const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
@@ -21,18 +15,25 @@ const DEPLOYER_KEY = process.env.DEPLOYER_KEY;
 
 // Verify contract
 const BSCSCAN_API_KEY = process.env.BSCSCAN_API_KEY;
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
+const CMC_API_KEY = process.env.CMC_API_KEY;
 
 module.exports = {
   solidity: "0.8.17",
-  settings: { optimizer: { enabled: true, runs: 20 } },
+  settings: { optimizer: { enabled: true, runs: 200 } },
   networks: {
+    // Ethereum mainnet
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${ALCHEMY_API_KEY}`,
+      accounts: [DEPLOYER_KEY],
+    },
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
-      accounts: [PRIVATE_KEY],
+      accounts: [DEPLOYER_KEY],
     },
     rinkeby: {
-      url: `https://rinkeby.infura.io/v3/`,
-      accounts: [PRIVATE_KEY],
+      url: `https://rinkeby.infura.io/v3/${ALCHEMY_API_KEY}`,
+      accounts: [DEPLOYER_KEY],
     },
     // Bsc testnet
     testnet: {
@@ -47,7 +48,19 @@ module.exports = {
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
+    gasPrice: 11,
     currency: "USD",
+    outputFile: "gasUsed.txt",
+    noColors: true,
+    coinmarketcap: CMC_API_KEY,
+    excludeContracts: [
+      "NFTFactory.sol",
+      "SecondSkinNFT.sol",
+      "TAVA.sol",
+      "ThirdPartyNFT.sol",
+      "ThirdPartyToken.sol",
+      "TokenFactory.sol",
+    ],
   },
   // specify separate cache for hardhat, since it could possibly conflict with foundry's
   paths: { cache: "hh-cache" },
