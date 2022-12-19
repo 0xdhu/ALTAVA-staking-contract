@@ -53,13 +53,13 @@ contract NFTStaking is Ownable, INFTStaking {
     mapping(address => mapping(address => ItMap)) public nftChefBoostData;
 
     /// @dev when you register secondskin NFT in NFTStaking contract,
-    event NFTStaked(address indexed sender, uint256 tokenId);
+    event NFTStaked(address sender, uint256 tokenId);
     /// @dev when you unregister secondskin NFT in NFTStaking contract,
-    event NFTUnstaked(address indexed sender, uint256 tokenId);
+    event NFTUnstaked(address sender, uint256 tokenId);
     /// @dev if you have registered secondskin NFT in NFTStaking contract,
     /// you can get booster in smartchef contract
     event SmartChefBoosterAdded(
-        address indexed sender,
+        address sender,
         address smartchefAddress,
         uint256 tokenId,
         uint256 timestamp
@@ -67,7 +67,7 @@ contract NFTStaking is Ownable, INFTStaking {
     /// @dev if you have registered secondskin NFT in NFTStaking contract,
     /// you can get booster in nftchef contract
     event NFTChefBoosterAdded(
-        address indexed sender,
+        address sender,
         address nftchefAddress,
         uint256 tokenId,
         uint256 timestamp
@@ -138,22 +138,18 @@ contract NFTStaking is Ownable, INFTStaking {
     /**
      * @notice Set MasterChef contract by only admin
      */
-    function setMasterChef(address newMasterChef)
-        external
-        onlyOwner
-        _realAddress(newMasterChef)
-    {
+    function setMasterChef(
+        address newMasterChef
+    ) external onlyOwner _realAddress(newMasterChef) {
         masterChef = IMasterChef(newMasterChef);
     }
 
     /**
      * @notice Set NFT MasterChef contract by only admin
      */
-    function setNFTMasterChef(address newNFTMasterChef)
-        external
-        onlyOwner
-        _realAddress(newNFTMasterChef)
-    {
+    function setNFTMasterChef(
+        address newNFTMasterChef
+    ) external onlyOwner _realAddress(newNFTMasterChef) {
         nftMasterChef = INFTMasterChef(newNFTMasterChef);
     }
 
@@ -239,12 +235,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * need to start tracking staked secondskin NFT token IDs for booster
      * @param sender: user address
      */
-    function stakeFromSmartChef(address sender)
-        external
-        override
-        onlySmartChef
-        returns (bool)
-    {
+    function stakeFromSmartChef(
+        address sender
+    ) external override onlySmartChef returns (bool) {
         ItMap storage smartchefData = smartChefBoostData[sender][msg.sender];
         StakedInfo memory stakedInfo = stakedIds[sender];
         uint256 len = stakedInfo.tokenIds.length;
@@ -269,12 +262,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * @notice when unstake TAVA in SmartChef contract
      * need to free space in nft staking contract
      */
-    function unstakeFromSmartChef(address sender)
-        external
-        override
-        onlySmartChef
-        returns (bool)
-    {
+    function unstakeFromSmartChef(
+        address sender
+    ) external override onlySmartChef returns (bool) {
         ItMap storage smartchefData = smartChefBoostData[sender][msg.sender];
         if (smartchefData.stakeStarted && smartchefData.keys.length > 0) {
             delete smartChefBoostData[sender][msg.sender];
@@ -287,12 +277,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * need to start tracking staked secondskin NFT token IDs for booster
      * @param sender: user address
      */
-    function stakeFromNFTChef(address sender)
-        external
-        override
-        onlyNFTChef
-        returns (bool)
-    {
+    function stakeFromNFTChef(
+        address sender
+    ) external override onlyNFTChef returns (bool) {
         ItMap storage nftchefData = nftChefBoostData[sender][msg.sender];
         StakedInfo memory stakedInfo = stakedIds[sender];
         uint256 len = stakedInfo.tokenIds.length;
@@ -317,12 +304,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * @notice when unstake TAVA in NFTChef contract
      * need to free space in nft staking contract
      */
-    function unstakeFromNFTChef(address sender)
-        external
-        override
-        onlyNFTChef
-        returns (bool)
-    {
+    function unstakeFromNFTChef(
+        address sender
+    ) external override onlyNFTChef returns (bool) {
         ItMap storage nftchefData = nftChefBoostData[sender][msg.sender];
         if (nftchefData.stakeStarted && nftchefData.keys.length > 0) {
             delete nftChefBoostData[sender][msg.sender];
@@ -336,12 +320,10 @@ contract NFTStaking is Ownable, INFTStaking {
      * @param smartchef: smartchef address
      * return timestamp array, registered count array at that ts
      */
-    function getSmartChefBoostData(address sender, address smartchef)
-        external
-        view
-        override
-        returns (uint256[] memory, uint256[] memory)
-    {
+    function getSmartChefBoostData(
+        address sender,
+        address smartchef
+    ) external view override returns (uint256[] memory, uint256[] memory) {
         ItMap storage senderData = smartChefBoostData[sender][smartchef];
         uint256[] memory tempKeys = senderData.keys;
 
@@ -368,12 +350,10 @@ contract NFTStaking is Ownable, INFTStaking {
      * @param sender: target address
      * @param nftchef: nftchef address
      */
-    function getNFTChefBoostCount(address sender, address nftchef)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getNFTChefBoostCount(
+        address sender,
+        address nftchef
+    ) external view override returns (uint256) {
         ItMap storage data = nftChefBoostData[sender][nftchef];
         uint256 stakedAmount = data.keys.length;
         uint256 tempCount = 0;
@@ -392,12 +372,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * @notice get registered token IDs
      * @param sender: target address
      */
-    function getStakedTokenIds(address sender)
-        external
-        view
-        override
-        returns (uint256[] memory)
-    {
+    function getStakedTokenIds(
+        address sender
+    ) external view override returns (uint256[] memory) {
         StakedInfo memory stakedInfo = stakedIds[sender];
         uint256 stakedAmount = stakedInfo.tokenIds.length;
         uint256 liveStakedAmount = getStakedNFTCount(sender);
@@ -420,11 +397,9 @@ contract NFTStaking is Ownable, INFTStaking {
      * @notice Get registered amount by sender
      * @param sender: target address
      */
-    function getStakedNFTCount(address sender)
-        public
-        view
-        returns (uint256 amount)
-    {
+    function getStakedNFTCount(
+        address sender
+    ) public view returns (uint256 amount) {
         StakedInfo memory stakedInfo = stakedIds[sender];
 
         uint256 stakedAmount = stakedInfo.tokenIds.length;
@@ -489,11 +464,10 @@ contract NFTStaking is Ownable, INFTStaking {
      * @dev return registered index
      * if tokenId has not been registered, return MAX_LIMIT
      */
-    function _getStakedIndex(address _sender, uint256 _tokenId)
-        private
-        view
-        returns (uint256)
-    {
+    function _getStakedIndex(
+        address _sender,
+        uint256 _tokenId
+    ) private view returns (uint256) {
         StakedInfo memory stakedInfo = stakedIds[_sender];
 
         uint256 stakedAmount = stakedInfo.tokenIds.length;

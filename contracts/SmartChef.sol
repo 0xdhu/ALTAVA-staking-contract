@@ -91,7 +91,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     /// @param rewardDebt: reward debt
     event Stake(
         address smartchef,
-        address indexed sender,
+        address sender,
         uint256 lockedAmount,
         uint256 lockStartTime,
         uint256 lockEndTime,
@@ -102,12 +102,12 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     /// @notice whenever user lock or extend period, emit
     /// @param smartchef: smartchef contract address
     /// @param sender: staker/user wallet address
-    /// @param rewards: locked amount
+    /// @param rewards: reward amount
     /// @param boosterValue: boosted apr
     /// @param airdropWalletAddress: airdrop wallet address
     event Unstaked(
         address smartchef,
-        address indexed sender,
+        address sender,
         uint256 rewards,
         uint256 boosterValue,
         string airdropWalletAddress
@@ -162,9 +162,11 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
             rewardToken = _rewardToken;
             uint256 decimalsRewardToken = uint256(rewardToken.decimals());
             require(decimalsRewardToken < 30, "Must be less than 30");
-            precisionFactor = uint256(10**(uint256(30) - decimalsRewardToken));
+            precisionFactor = uint256(
+                10 ** (uint256(30) - decimalsRewardToken)
+            );
         } else {
-            precisionFactor = uint256(10**(uint256(30) - 18));
+            precisionFactor = uint256(10 ** (uint256(30) - 18));
         }
         reward = _reward;
 
@@ -180,10 +182,9 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     /**
      * @notice set/update BoosterController address
      */
-    function setBoosterController(address _boosterController)
-        external
-        onlyOwner
-    {
+    function setBoosterController(
+        address _boosterController
+    ) external onlyOwner {
         require(_boosterController != address(0x0), "Cannot be zero address");
         boosterController = IBoosterController(_boosterController);
     }
@@ -235,12 +236,10 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
      * @param _amount: amount to lock
      * @param _lockDuration: duration to lock
      */
-    function stake(uint256 _amount, uint256 _lockDuration)
-        external
-        nonReentrant
-        whenNotPaused
-        returns (bool)
-    {
+    function stake(
+        uint256 _amount,
+        uint256 _lockDuration
+    ) external nonReentrant whenNotPaused returns (bool) {
         require(_amount > 0 || _lockDuration > 0, "Nothing to deposit");
         return (_stake(_amount, _lockDuration, msg.sender));
     }
@@ -252,11 +251,9 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
      * so users cannot claim reward directly
      * To get reward tokens, they need to provide airdrop address
      */
-    function unlock(string memory airdropWalletAddress)
-        external
-        nonReentrant
-        returns (bool)
-    {
+    function unlock(
+        string memory airdropWalletAddress
+    ) external nonReentrant returns (bool) {
         if (rewardByAirdrop) {
             bytes memory stringBytes = bytes(airdropWalletAddress); // Uses memory
 
@@ -334,11 +331,9 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
      * @dev this value need to be divided by (365 days in second) booster denominator
      * and user's locked duration
      */
-    function getStakerBoosterValue(address sender)
-        public
-        view
-        returns (uint256)
-    {
+    function getStakerBoosterValue(
+        address sender
+    ) public view returns (uint256) {
         (uint256[] memory lockTs, uint256[] memory amounts) = nftstaking
             .getSmartChefBoostData(sender, address(this));
         UserInfo memory user = userInfo[sender];
@@ -469,11 +464,10 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
      * @param _from: block to start
      * @param _to: block to finish
      */
-    function _getMultiplier(uint256 _from, uint256 _to)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getMultiplier(
+        uint256 _from,
+        uint256 _to
+    ) internal view returns (uint256) {
         if (_to <= bonusEndBlock) {
             return _to - _from;
         } else if (_from >= bonusEndBlock) {

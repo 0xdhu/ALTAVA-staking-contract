@@ -19,11 +19,11 @@ contract MasterChef is Ownable {
     mapping(address => uint256) private _subchefIndexs;
 
     /// @dev Even whenever MasterChef deploy new smartchef
-    /// @param id: Data ID from off-chain database to just identify
+    /// @param chefId: Data ID from off-chain database to just chefIdentify
     event NewSmartChefContract(
-        string id,
-        address indexed smartChef,
-        address indexed stakedToken,
+        string chefId,
+        address smartChef,
+        address stakedToken,
         string rewardToken,
         bool rewardByAirdrop
     );
@@ -44,11 +44,9 @@ contract MasterChef is Ownable {
      * @notice set/update NFTStaking contract
      * @param _nftstaking: NFTStaking contract address
      */
-    function setNFTStaking(address _nftstaking)
-        external
-        _realAddress(_nftstaking)
-        onlyOwner
-    {
+    function setNFTStaking(
+        address _nftstaking
+    ) external _realAddress(_nftstaking) onlyOwner {
         nftstaking = _nftstaking;
     }
 

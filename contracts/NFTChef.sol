@@ -76,8 +76,8 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /// @param nftBalance: registered secondskin NFT balance
     /// @param discountRate: discount rate by booster
     event Staked(
-        address indexed nftchef,
-        address indexed sender,
+        address nftchef,
+        address sender,
         uint256 stakeIndex,
         uint256 stakedAmount,
         uint256 lockedAt,
@@ -95,8 +95,8 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /// @param nftBalance: registered secondskin NFT balance
     /// @param airdropWalletAddress: airdrop wallet address
     event Unstaked(
-        address indexed nftchef,
-        address indexed sender,
+        address nftchef,
+        address sender,
         uint256 stakeIndex,
         uint256 rewardAmount,
         uint256 nftBalance,
@@ -111,8 +111,8 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /// @param rewardnftAmount: reward nft amount
     /// @param isLive: this option is live or not
     event AddedRequiredLockAmount(
-        address indexed nftchef,
-        address indexed sender,
+        address nftchef,
+        address sender,
         uint256 period,
         uint requiredAmount,
         uint rewardnftAmount,
@@ -344,10 +344,10 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
      * so users cannot claim reward directly
      * To get reward NFT, they need to provide airdrop address
      */
-    function unstake(string memory airdropWalletAddress, bool giveUp)
-        external
-        nonReentrant
-    {
+    function unstake(
+        string memory airdropWalletAddress,
+        bool giveUp
+    ) external nonReentrant {
         bytes memory stringBytes = bytes(airdropWalletAddress); // Uses memory
         require(stringBytes.length > 0, "Cannot be zero address");
 
@@ -425,11 +425,9 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev get booster percent of user wallet.
      */
-    function getStakerBoosterValue(address sender)
-        external
-        view
-        returns (uint256)
-    {
+    function getStakerBoosterValue(
+        address sender
+    ) external view returns (uint256) {
         uint256 amount = nftstaking.getNFTChefBoostCount(sender, address(this));
         return getBoosterValue(amount);
     }
@@ -466,22 +464,19 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev get Staker Info.
      */
-    function getStakerInfo(address sender, uint256 stakingIndex)
-        external
-        view
-        returns (StakerInfo memory)
-    {
+    function getStakerInfo(
+        address sender,
+        uint256 stakingIndex
+    ) external view returns (StakerInfo memory) {
         return _stakerInfos[sender][stakingIndex];
     }
 
     /**
      * @dev get current Staker Info.
      */
-    function getCurrentStakerInfo(address sender)
-        external
-        view
-        returns (StakerInfo memory)
-    {
+    function getCurrentStakerInfo(
+        address sender
+    ) external view returns (StakerInfo memory) {
         // Get user staking index
         uint256 idx = _userStakeIndex[sender];
         return _stakerInfos[sender][idx];
@@ -499,11 +494,9 @@ contract NFTChef is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev get config info based on period
      */
-    function getConfig(uint256 _period)
-        external
-        view
-        returns (ChefConfig memory)
-    {
+    function getConfig(
+        uint256 _period
+    ) external view returns (ChefConfig memory) {
         return chefConfig[_period];
     }
 

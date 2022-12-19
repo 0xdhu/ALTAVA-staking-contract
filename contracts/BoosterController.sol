@@ -34,7 +34,7 @@ contract BoosterController is Ownable {
     /// @param nftAmount: means registered secondskin NFT amount
     /// @param boosterAPR: booster APR based on nftAmount
     event BoosterUpdated(
-        address indexed sender,
+        address sender,
         address smartchef,
         uint256 nftAmount,
         uint256 boosterAPR
@@ -44,11 +44,7 @@ contract BoosterController is Ownable {
     /// @param sender: this should be owner/signer
     /// @param smartchef: smartchef contract address
     /// @param nftAmount: means registered secondskin NFT amount
-    event BoosterDeleted(
-        address indexed sender,
-        address smartchef,
-        uint256 nftAmount
-    );
+    event BoosterDeleted(address sender, address smartchef, uint256 nftAmount);
 
     /**
      * @notice set Booster rate in array
@@ -77,10 +73,10 @@ contract BoosterController is Ownable {
      * @param _booster: array of booster rates.
      * @param _smartchef: SmartChef contract address
      */
-    function setBoosterValue(BoosterStruct memory _booster, address _smartchef)
-        external
-        onlyOwner
-    {
+    function setBoosterValue(
+        BoosterStruct memory _booster,
+        address _smartchef
+    ) external onlyOwner {
         require(_smartchef != address(0x0), "Cannot be zero address");
 
         _setBoosterValue(_booster, _smartchef);
@@ -91,10 +87,10 @@ contract BoosterController is Ownable {
      * @param _key: registered secondskin NFT amount
      * @param _smartchef: SmartChef contract
      */
-    function removeBoosterValue(uint256 _key, address _smartchef)
-        external
-        onlyOwner
-    {
+    function removeBoosterValue(
+        uint256 _key,
+        address _smartchef
+    ) external onlyOwner {
         require(_smartchef != address(0x0), "Cannot be zero address");
         ItMap storage smartchefBooster = _smartchefBooster[_smartchef];
         smartchefBooster.remove(_key);
@@ -108,11 +104,10 @@ contract BoosterController is Ownable {
      * @param _key: registered secondskin NFT amount
      * @param _smartchef: SmartChef contract
      */
-    function getBoosterAPR(uint256 _key, address _smartchef)
-        external
-        view
-        returns (uint256)
-    {
+    function getBoosterAPR(
+        uint256 _key,
+        address _smartchef
+    ) external view returns (uint256) {
         ItMap storage smartchefBooster = _smartchefBooster[_smartchef];
         if (smartchefBooster.contains(_key)) {
             return smartchefBooster.data[_key];
@@ -131,11 +126,9 @@ contract BoosterController is Ownable {
     /**
      * @notice Get sorted array for booster key-values
      */
-    function getBoosterKeysValues(address _smartchef)
-        external
-        view
-        returns (BoosterStruct[] memory boosterData)
-    {
+    function getBoosterKeysValues(
+        address _smartchef
+    ) external view returns (BoosterStruct[] memory boosterData) {
         ItMap storage smartchefBooster = _smartchefBooster[_smartchef];
 
         uint256[] memory keys = smartchefBooster.keys;
@@ -156,11 +149,9 @@ contract BoosterController is Ownable {
      * @notice Get total number of booster key-apr array
      * @param _smartchef: SmartChef contract address
      */
-    function getTotalPairCount(address _smartchef)
-        external
-        view
-        returns (uint256)
-    {
+    function getTotalPairCount(
+        address _smartchef
+    ) external view returns (uint256) {
         ItMap storage smartchefBooster = _smartchefBooster[_smartchef];
         return smartchefBooster.keys.length;
     }
@@ -168,9 +159,10 @@ contract BoosterController is Ownable {
     /**
      * @dev set booster APR based on key
      */
-    function _setBoosterValue(BoosterStruct memory _booster, address _smartchef)
-        private
-    {
+    function _setBoosterValue(
+        BoosterStruct memory _booster,
+        address _smartchef
+    ) private {
         uint256 key = _booster.key;
         uint256 apr = _booster.apr;
         require(key > 0 && apr > 0, "Inputs cannot be zero");
@@ -201,11 +193,7 @@ contract BoosterController is Ownable {
 
     /// @notice return sorted Array as increased
     /// @dev quicksort algorithm to sort array
-    function _quickSort(
-        uint[] memory arr,
-        int left,
-        int right
-    ) private pure {
+    function _quickSort(uint[] memory arr, int left, int right) private pure {
         int i = left;
         int j = right;
         if (i == j) return;
@@ -224,11 +212,10 @@ contract BoosterController is Ownable {
     }
 
     // Return top and down keys based on main key in array
-    function _getTopDownKeys(uint256[] memory keys, uint256 _key)
-        private
-        pure
-        returns (uint256, uint256)
-    {
+    function _getTopDownKeys(
+        uint256[] memory keys,
+        uint256 _key
+    ) private pure returns (uint256, uint256) {
         uint256 keySize = keys.length;
         uint256 maxKey = 10000; // secondskin NFT supply is less than 10,000
         uint256 minKey = 0; // secondskin NFT supply is less than 10,000

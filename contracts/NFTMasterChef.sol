@@ -23,11 +23,7 @@ contract NFTMasterChef is Ownable, INFTMasterChef {
     mapping(address => uint256) private _subChefs;
 
     // Deployed new chef Event
-    event NewNFTChefContract(
-        string id,
-        address indexed chef,
-        string indexed rewardNFT
-    );
+    event NewNFTChefContract(string chefId, address chef, string rewardNFT);
 
     /// @notice Check if target address is zero address
     modifier _realAddress(address addr) {
@@ -38,10 +34,10 @@ contract NFTMasterChef is Ownable, INFTMasterChef {
     /// @dev Constructore
     /// @param _stakedToken: stake token address (TAVA)
     /// @param _nftstaking: NFTStaking contract address
-    constructor(address _stakedToken, address _nftstaking)
-        _realAddress(_stakedToken)
-        _realAddress(_nftstaking)
-    {
+    constructor(
+        address _stakedToken,
+        address _nftstaking
+    ) _realAddress(_stakedToken) _realAddress(_nftstaking) {
         require(IERC20(_stakedToken).totalSupply() >= 0, "Invalid token");
         nftstaking = _nftstaking;
         stakedToken = _stakedToken;
@@ -51,11 +47,9 @@ contract NFTMasterChef is Ownable, INFTMasterChef {
      * @notice set/update NFTStaking contract
      * @param _nftstaking: NFTStaking contract address
      */
-    function setNFTStaking(address _nftstaking)
-        external
-        _realAddress(_nftstaking)
-        onlyOwner
-    {
+    function setNFTStaking(
+        address _nftstaking
+    ) external _realAddress(_nftstaking) onlyOwner {
         nftstaking = _nftstaking;
     }
 
@@ -123,12 +117,9 @@ contract NFTMasterChef is Ownable, INFTMasterChef {
     /**
      * @notice get chef address with index
      */
-    function getChefAddress(uint256 id)
-        external
-        view
-        override
-        returns (address)
-    {
+    function getChefAddress(
+        uint256 id
+    ) external view override returns (address) {
         require(totalCount >= id && id > 0, "Chef: not exist");
         return _chefAddress[id];
     }
