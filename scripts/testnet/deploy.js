@@ -1,8 +1,25 @@
 async function main() {
-  const secondskinNFT = "0x03222f6Ee842c079b3d88e7abDb362193FC5BE26";
-  const TAVA = "0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D";
+  // const secondskinNFT = "0x03222f6Ee842c079b3d88e7abDb362193FC5BE26";
+  // const TAVA = "0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D";
   const [deployer] = await ethers.getSigners();
   console.log("Deployer: ", deployer.address);
+  // Deploy SecondskinNFT contract
+  const SecondSkinNFT = await ethers.getContractFactory(
+    "SecondSkinNFT"
+  );
+  const SecondSkinNFTContract = await SecondSkinNFT.deploy(deployer.address);
+  await SecondSkinNFTContract.deployed();
+  const secondskinNFT = SecondSkinNFTContract.address;
+  console.log("SecondSkinNFT: ", secondskinNFT);
+
+  // Deploy TAVAC contract
+  const TAVAC = await ethers.getContractFactory(
+    "TAVA"
+  );
+  const TAVAContract = await TAVAC.deploy();
+  await TAVAContract.deployed();
+  const TAVA = TAVAContract.address;
+  console.log("TAVA: ", TAVAContract.address);
 
   // Deploy Booster Token contract
   const BoosterController = await ethers.getContractFactory(
@@ -37,6 +54,21 @@ async function main() {
 
   await NFTStakingContract.setMasterChef(MasterChefContract.address);
   await NFTStakingContract.setNFTMasterChef(NFTMasterChefContract.address);
+
+  // Deploy token Factory contract
+  const TokenFactory = await ethers.getContractFactory("TokenFactory");
+  const TokenFactoryContract = await TokenFactory.deploy();
+  await TokenFactoryContract.deployed();
+  console.log("TokenFactory: ", TokenFactoryContract.address);
+
+  // Deploy NFT Factory contract
+  const NFTFactory = await ethers.getContractFactory("NFTFactory");
+  const NFTFactoryContract = await NFTFactory.deploy();
+  await NFTFactoryContract.deployed();
+  console.log("NFTFactory: ", NFTFactoryContract.address);
+
+  // await TokenFactoryContract.deploy("AltavaStakingTestToken", "ASTT");
+  // await NFTFactoryContract.deploy("AltavaStakingTestNFT", "ASTN");
 }
 
 main()

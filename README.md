@@ -57,32 +57,32 @@ You can deploy your contract on any testnet as you want.<br />
 
 ### TAVA Contract
 
-[`0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D`](https://testnet.bscscan.com/address/0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D)
+[`0x9d7A56260516fEd6eBd255F0d82C483BC3D9DC3B`](https://testnet.bscscan.com/address/0x9d7A56260516fEd6eBd255F0d82C483BC3D9DC3B)
 
 ### SecondSkinNFT Contract
 
-[`0x03222f6Ee842c079b3d88e7abDb362193FC5BE26`](https://testnet.bscscan.com/address/0x03222f6Ee842c079b3d88e7abDb362193FC5BE26)
+[`0x322baa6c6290D48a0b64139997aa7E4247A2d40F`](https://testnet.bscscan.com/address/0x322baa6c6290D48a0b64139997aa7E4247A2d40F)
 
 ### BoosterController Contract
 
-[`0x14ff97Bcd0c019d9E46316Ef2ee3CDa035572833`](https://testnet.bscscan.com/address/0x14ff97Bcd0c019d9E46316Ef2ee3CDa035572833)
+[`0xe8643dFaA341e428341111d642fC54A956daAE70`](https://testnet.bscscan.com/address/0xe8643dFaA341e428341111d642fC54A956daAE70)
 
 ### NFTStaking Contract
 
-[`0x0113765Ae30B859Cb2886b133E5b08194A2d412A`](https://testnet.bscscan.com/address/0x0113765Ae30B859Cb2886b133E5b08194A2d412A)
+[`0x70738BA5b782c1417D5A5A17cC32E8984ded0e4B`](https://testnet.bscscan.com/address/0x70738BA5b782c1417D5A5A17cC32E8984ded0e4B)
 
 ### NFTMasterChef
 
-[`0xDeadd1886C1fa2A376d847B3234Bb459284F1aCA`](https://testnet.bscscan.com/address/0xDeadd1886C1fa2A376d847B3234Bb459284F1aCA)
+[`0x2409379591922072ffCd097D0f8d6A52e93ab9dE`](https://testnet.bscscan.com/address/0x2409379591922072ffCd097D0f8d6A52e93ab9dE)
 
 ### MasterChef
 
-[`0xF451A0C6Ec26f952Db6361468443eadF6CdbdE15`](https://testnet.bscscan.com/address/0xF451A0C6Ec26f952Db6361468443eadF6CdbdE15)
+[`0x39931aDF1De4d068A5747e4c5d7B81f9CfADCfbE`](https://testnet.bscscan.com/address/0x39931aDF1De4d068A5747e4c5d7B81f9CfADCfbE)
 
 ### Token Generate Factory
 
-[`0x4f062510762A86E59941b87cc4fad955e6867814`](https://testnet.bscscan.com/address/0x4f062510762A86E59941b87cc4fad955e6867814)
+[`0x825dDD8018B3EafD7ddf53Ef34c722a8c5cDfa04`](https://testnet.bscscan.com/address/0x825dDD8018B3EafD7ddf53Ef34c722a8c5cDfa04)
 
 ### NFT Generate Factory
 
-[`0xab9BEE265A4A00714f6A63A7bD846569BC68fD0C`](https://testnet.bscscan.com/address/0xab9BEE265A4A00714f6A63A7bD846569BC68fD0C)
+[`0xA366E17261833E3BBD8f89D25F8D6f9c24DF10f9`](https://testnet.bscscan.com/address/0xA366E17261833E3BBD8f89D25F8D6f9c24DF10f9)
