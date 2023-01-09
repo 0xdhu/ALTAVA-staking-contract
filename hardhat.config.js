@@ -28,7 +28,7 @@ module.exports = {
       accounts: [DEPLOYER_KEY],
     },
     goerli: {
-      url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
+      url: `https://goerli.infura.io/v3/c2d24d91711d47e6823642d742a24e66`,
       accounts: [DEPLOYER_KEY],
     },
     rinkeby: {
