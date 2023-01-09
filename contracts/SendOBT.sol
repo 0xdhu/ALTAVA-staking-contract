@@ -37,4 +37,9 @@ contract SendOBT is Ownable {
             TAVA.safeTransferFrom(address(this), addresses[i], tokenAmount);
         }
     }
+
+    function withdrawRemainningTokens(address _taddress) external onlyOwner {
+        uint256 bal = IERC20Metadata(_taddress).balanceOf(address(this));
+        IERC20Metadata(_taddress).safeTransfer(msg.sender, bal);
+    }
 }
