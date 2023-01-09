@@ -21,6 +21,7 @@
     "deploy:goerli": "npx hardhat run scripts/testnet/deploy.js --network goerli",
     "deploy:rinkeby": "npx hardhat run scripts/testnet/deploy.js --network rinkeby",
     "deploy:mainnet": "npx hardhat run scripts/mainnet/deploy.js --network mainnet",
+    "deploy:faucet": "npx hardhat run scripts/testnet/deploy_faucet.js --network goerli",
     "verify:rinkeby": "npx hardhat verify --network rinkeby DEPLOYED_CONTRACT_ADDRESS 'Constructor argument 1'"
   },
   "devDependencies": {

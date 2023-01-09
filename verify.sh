@@ -17,3 +17,4 @@ npx hardhat verify --contract contracts/NFTMasterChef.sol:NFTMasterChef --networ
 # npx hardhat verify --contract contracts/ThirdPartyNFT.sol:ThirdPartyNFT --network goerli 0xbEBcec5275E1adC8c46Cf6A730f7eC68fd67A199 "0xCED6A14D3955F3A0579D398Ac87140D6B7D5ad37" "AltavaStakingTestNFT" "ASTN"
 # npx hardhat verify --contract contracts/TokenFactory.sol:TokenFactory --network goerli 0x825dDD8018B3EafD7ddf53Ef34c722a8c5cDfa04
 # npx hardhat verify --contract contracts/NFTFactory.sol:NFTFactory --network goerli 0xA366E17261833E3BBD8f89D25F8D6f9c24DF10f9
+# npx hardhat verify --contract contracts/SendOBT.sol:SendOBT --network goerli 0x8d45FaE2D19b8d6bb71c0C683D16B23D90F11943
