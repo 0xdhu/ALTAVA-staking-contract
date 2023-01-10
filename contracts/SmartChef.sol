@@ -73,7 +73,7 @@ contract SmartChef is Ownable, ReentrancyGuard, Pausable {
     // Booster denominator
     uint256 public constant DENOMINATOR = 10000 * 365 days; // 100% * 365 days
     // Limit lock period on min-max level
-    uint256 public constant MIN_LOCK_DURATION = 1 weeks;
+    uint256 public constant MIN_LOCK_DURATION = 1 days;
     uint256 public constant MAX_LOCK_DURATION = 1000 days;
     // Min deposit able amount
     uint256 public constant MIN_DEPOSIT_AMOUNT = 0.00001 ether;

@@ -22,7 +22,7 @@ contract NFTStaking is Ownable, INFTStaking {
     }
 
     /// @notice Secondskin NFT contract
-    IERC721 public immutable secondskinNFT;
+    IERC721 public secondskinNFT;
     /// @notice MasterChef contract
     IMasterChef public masterChef;
     /// @notice NFT MasterChef contract
@@ -142,6 +142,15 @@ contract NFTStaking is Ownable, INFTStaking {
         address newMasterChef
     ) external onlyOwner _realAddress(newMasterChef) {
         masterChef = IMasterChef(newMasterChef);
+    }
+
+    /**
+     * @dev update secondskin nft address
+     */
+    function setSecondskinNFT(
+        address _secondskinnft
+    ) external onlyOwner _realAddress(_secondskinnft) {
+        secondskinNFT = IERC721(_secondskinnft);
     }
 
     /**

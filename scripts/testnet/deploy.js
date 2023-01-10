@@ -1,6 +1,6 @@
 async function main() {
-  // const secondskinNFT = "0x03222f6Ee842c079b3d88e7abDb362193FC5BE26";
-  // const TAVA = "0x5Bd94A8Be93F2F9e918B8C08104962Bcd22a9B2D";
+  // const secondskinNFT = "0x390708922E38E0e614574Ed9419a7103BAda5F6F";
+  // const TAVA = "0x9d7A56260516fEd6eBd255F0d82C483BC3D9DC3B";
   const [deployer] = await ethers.getSigners();
   console.log("Deployer: ", deployer.address);
   // Deploy SecondskinNFT contract
@@ -51,7 +51,6 @@ async function main() {
   );
   await MasterChefContract.deployed();
   console.log("MasterChef: ", MasterChefContract.address);
-
   await NFTStakingContract.setMasterChef(MasterChefContract.address);
   await NFTStakingContract.setNFTMasterChef(NFTMasterChefContract.address);
 
@@ -67,8 +66,19 @@ async function main() {
   await NFTFactoryContract.deployed();
   console.log("NFTFactory: ", NFTFactoryContract.address);
 
-  // await TokenFactoryContract.deploy("AltavaStakingTestToken", "ASTT");
-  // await NFTFactoryContract.deploy("AltavaStakingTestNFT", "ASTN");
+  await TokenFactoryContract.deploy("Reward Test Token", "RTT");
+  await NFTFactoryContract.deploy("Bored Ape Golf Club", "BAGC");
+  
+  // Deploy SendOBT contract
+  const SendOBT = await ethers.getContractFactory(
+    "SendOBT",
+  );
+  const SendOBTContract = await SendOBT.deploy();
+  await SendOBTContract.deployed();
+  const sendOBTAddress = SendOBTContract.address;
+  console.log("sendOBT Address: ", sendOBTAddress);
+  
+  await SendOBTContract.updateTavaAddress(TAVA);
 }
 
 main()
